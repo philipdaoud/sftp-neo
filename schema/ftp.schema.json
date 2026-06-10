@@ -1,0 +1,46 @@
+{
+  "allOf": [
+    {
+      "$ref": "definitions.json#/rootOption"
+    },
+    {
+      "$ref": "definitions.json#/option"
+    },
+    {
+      "$ref": "definitions.json#/host"
+    },
+    {
+      "$ref": "definitions.json#/sftp"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "protocol": {
+          "enum": ["ftp"],
+          "description": "ftp connection protocol."
+        },
+
+        "profiles": {
+          "patternProperties": {
+            "^.*$": {
+              "allOf": [
+                {
+                  "$ref": "definitions.json#/option"
+                },
+                {
+                  "$ref": "definitions.json#/host"
+                },
+                {
+                  "$ref": "definitions.json#/sftp"
+                }
+              ]
+            }
+          },
+          "default": {
+            "profileName": {}
+          }
+        }
+      }
+    }
+  ]
+}

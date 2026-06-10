@@ -1,0 +1,55 @@
+### OS ###
+.DS_Store
+Thumbs.db
+
+### Build output ###
+out
+dist
+build/Release
+test/test.js
+
+### Debug / scratch ###
+_debug
+TODO.md
+INSTALL_DEBUG.md
+
+### Extension packages ###
+*.vsix
+
+### VS Code ###
+.vscode/**
+!.vscode/tasks.json
+!.vscode/launch.json
+.vscode-test
+
+### Node ###
+node_modules
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+
+### Test / coverage ###
+coverage
+.nyc_output
+
+### Environment ###
+.env
+.env.*
+!.env.example
+
+### Yarn ###
+.yarn/*
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions
+!.yarn/cache
+
+### Bower ###
+bower_components
+.bower-cache
+.bower-registry
+.bower-tmp
