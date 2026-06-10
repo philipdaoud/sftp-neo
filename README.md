@@ -1,17 +1,5 @@
 # SFTP Neo
 
-     ╭────────────────────────────────────────────────────────────╮
-     │                                                            │
-███████╗███████╗████████╗██████╗     ███╗   ██╗███████╗ ██████╗   │ ██████████████. 
-██╔════╝██╔════╝╚══██╔══╝██╔══██╗    ████╗  ██║██╔════╝██╔═══██╗  │ ███████████
-███████╗█████╗     ██║   ██████╔╝    ██╔██╗ ██║█████╗  ██║   ██║  │ ████████
-╚════██║██╔══╝     ██║   ██╔═══╝     ██║╚██╗██║██╔══╝  ██║   ██║  │ █████
-███████║██║        ██║   ██║         ██║ ╚████║███████╗╚██████╔╝  │ ███
-╚══════╝╚═╝        ╚═╝   ╚═╝         ╚═╝  ╚═══╝╚══════╝ ╚═════╝   │
-     │                                                            │ 
-     ╰────────────────────────────────────────────────────────────╯
-
-
 SFTP/FTP sync extension for VS Code.
 
 > **Fork Notice:** This extension is a fork of [vscode-sftp](https://github.com/Natizyskunk/vscode-sftp) by [Natizyskunk](https://github.com/Natizyskunk), originally based on the abandoned [liximomo/vscode-sftp](https://github.com/liximomo/vscode-sftp). It has been modernized with updated dependencies, new features, and compatibility with the latest VS Code APIs.
