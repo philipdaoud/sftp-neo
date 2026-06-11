@@ -191,6 +191,20 @@ function setConfigValue(config, key, value) {
   }
 }
 
+function getDirectiveValue(line: any): string | undefined {
+  const value = line.value;
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (Array.isArray(value) && value.length > 0) {
+    return value[0].val;
+  }
+  return undefined;
+}
+
 function mergeConfigWithExternalRefer(
   config: FileServiceConfig
 ): FileServiceConfig {
@@ -200,7 +214,7 @@ function mergeConfigWithExternalRefer(
     const remoteMap = getUserSetting(SETTING_KEY_REMOTE);
     const remote = remoteMap.get<Record<string, any>>(config.remote);
     if (!remote) {
-      throw new Error(`Can\'t not find remote "${config.remote}"`);
+      throw new Error(`Can't not find remote "${config.remote}"`);
     }
     const remoteKeyMapping = new Map([['scheme', 'protocol']]);
 
@@ -249,7 +263,7 @@ function mergeConfigWithExternalRefer(
     Host: copyed.host,
   });
 
-  if (section === null) {
+  if (!section) {
     return copyed;
   }
 
@@ -262,18 +276,22 @@ function mergeConfigWithExternalRefer(
     ['connecttimeout', 'connTimeout'],
   ]);
 
-  section.config.forEach(line => {
-    if (!line.param) {
+  (section as any).config.forEach(line => {
+    const param = (line as any).param;
+    if (!param) {
       return;
     }
 
-    const key = mapping.get(line.param.toLowerCase());
+    const key = mapping.get(param.toLowerCase());
 
     if (key !== undefined) {
-      if (key === 'host') {
-        copyed[key] = line.value;
-      } else {
-        setConfigValue(copyed, key, line.value);
+      const value = getDirectiveValue(line as any);
+      if (value !== undefined) {
+        if (key === 'host') {
+          copyed[key] = value;
+        } else {
+          setConfigValue(copyed, key, value);
+        }
       }
     }
   });
@@ -461,6 +479,7 @@ export default class FileService {
   }
 
   createTransferScheduler(concurrency): TransferScheduler {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias -- captured for use inside the scheduler closures below
     const fileService = this;
     const scheduler = new Scheduler({
       autoStart: false,
@@ -527,25 +546,34 @@ export default class FileService {
   async getRemoteFileSystem(config: ServiceConfig): Promise<FileSystem> {
     const hostInfo = getHostInfo(config) as any;
 
-    if (typeof hostInfo.password === 'string' && hostInfo.password.length > 0) {
+    // A real password written in sftp.json. The sentinel values
+    // "secretStorage"/"prompt" are not plaintext passwords.
+    const passwordIsPlaintext =
+      typeof hostInfo.password === 'string' &&
+      hostInfo.password.length > 0 &&
+      hostInfo.password !== 'secretStorage' &&
+      hostInfo.password !== 'prompt';
+
+    if (passwordIsPlaintext) {
       showWarningMessage(
         `Security warning: "${hostInfo.host}" has a plaintext password in sftp.json. ` +
         `Use \`"password": null\` and store credentials via "SFTP: Delete Saved Password" / Secret Storage instead.`
       );
-    }
-
-    if (
-      hostInfo.password === null ||
-      hostInfo.password === 'secretStorage' ||
-      hostInfo.password === 'prompt'
-    ) {
+    } else {
+      // No usable plaintext password — the field is omitted, null, empty, or a
+      // sentinel. Fall back to a credential saved in Secret Storage (if any) so
+      // users who saved their password aren't prompted again every session.
       hostInfo.password = (await getCredential(hostInfo.host, hostInfo.username, 'password')) || undefined;
     }
-    if (
-      hostInfo.passphrase === null ||
-      hostInfo.passphrase === 'secretStorage' ||
-      hostInfo.passphrase === 'prompt'
-    ) {
+    // Load saved passphrase from Secret Storage whenever there is no usable
+    // plaintext value — omitted, null, empty, or a sentinel.
+    const passphraseIsPlaintext =
+      typeof hostInfo.passphrase === 'string' &&
+      hostInfo.passphrase.length > 0 &&
+      hostInfo.passphrase !== 'secretStorage' &&
+      hostInfo.passphrase !== 'prompt';
+
+    if (!passphraseIsPlaintext) {
       const stored = await getCredential(hostInfo.host, hostInfo.username, 'passphrase');
       if (stored) {
         hostInfo.passphrase = stored;

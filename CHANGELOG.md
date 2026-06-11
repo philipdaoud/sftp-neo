@@ -1,3 +1,18 @@
+## 2.0.8 - 2026-06-11
+* **Fix:** Password and passphrase were only loaded from VS Code Secret Storage when the config explicitly set `"password": null` (or the `"secretStorage"`/`"prompt"` sentinels). If the field was simply omitted — the common convention, especially for FTP configs — it was `undefined` and the stored credential was never retrieved, forcing a re-prompt every session. Both fields now fall back to Secret Storage whenever there is no usable plaintext value (omitted, `null`, empty string, or sentinel), while the plaintext security warning is still shown only for real plaintext passwords.
+
+## 2.0.7 - 2026-06-11
+* **Deps:** Upgrade runtime dependencies with breaking changes addressed:
+  * `zod` `3.23.0` → `4.4.0` — updated `z.record()` calls to use explicit key schema (`z.record(z.string(), z.any())`).
+  * `ssh-config` `1.1.4` → `5.1.0` — fixed `line.value` handling to support new array-of-objects format; replaced `section === null` with `!section`.
+  * `basic-ftp` `5.3.1` → `6.0.0` — API compatible; requires Node ≥ 10 (VS Code 1.90 ships Node 20).
+  * `ignore` `5.3.0` → `7.0.0` — API compatible.
+  * `lru-cache` `10.2.0` → `11.5.0` — API compatible; requires Node ≥ 20.
+  * `upath` `2.0.1` → `3.0.7` — API compatible; requires Node ≥ 20.
+
+## 2.0.6 - 2026-06-11
+* **Fix:** With keyboard-interactive auth (`interactiveAuth`), the password saved in Secret Storage was retrieved but never used — the keyboard-interactive handler always re-prompted, so users were asked for their password on every VS Code restart. The stored credential is now supplied to the first password-style prompt. (Plain password and FTP auth were unaffected.) Also stopped mutating the configured `interactiveAuth` answers array on connect.
+
 ## 2.0.5 - 2026-06-10
 * **Fix:** Extension failed to activate when installed from a packaged `.vsix` ("command 'sftp.config' not found", config not detected). `ssh2` was marked as a webpack external but `node_modules` is not shipped in the package, so `require("ssh2")` threw during activation. `ssh2` is now bundled into `dist/extension.js`; only its optional native acceleration addons (`cpu-features`, `sshcrypto.node`) remain external and fall back to pure JS.
 * **Docs:** Document [Secure password storage](README.md#secure-password-storage) — passwords and key passphrases can be stored in the OS keychain via VS Code Secret Storage instead of plaintext in `sftp.json` (set `"password": null`). Use `SFTP: Delete Saved Password` to manage saved credentials.

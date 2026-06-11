@@ -5,12 +5,11 @@ import { FileHandleOption } from './option';
 
 export const createRemoteFile = createFileHandler<FileHandleOption & { skipDir?: boolean }>({
   name: 'createRemoteFile',
-  async handle(option) {
+  async handle(_option) {
     const remoteFs = await this.fileService.getRemoteFileSystem(this.config);
     const { remoteFsPath } = this.target;
 
-    let promise;
-    promise = fileOperations.createFile(remoteFsPath, remoteFs, {});
+    const promise = fileOperations.createFile(remoteFsPath, remoteFs, {});
 
     /*
     const stat = await remoteFs.lstat(remoteFsPath);
@@ -44,12 +43,11 @@ export const createRemoteFile = createFileHandler<FileHandleOption & { skipDir?:
 
 export const createRemoteFolder = createFileHandler<FileHandleOption & { skipDir?: boolean }>({
   name: 'createRemoteFolder',
-  async handle(option) {
+  async handle(_option) {
     const remoteFs = await this.fileService.getRemoteFileSystem(this.config);
     const { remoteFsPath } = this.target;
 
-    let promise;
-    promise = fileOperations.createDir(remoteFsPath, remoteFs, {});
+    const promise = fileOperations.createDir(remoteFsPath, remoteFs, {});
 
     /*
     const stat = await remoteFs.lstat(remoteFsPath);

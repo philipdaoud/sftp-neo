@@ -77,6 +77,7 @@ export default abstract class RemoteFileSystem extends FileSystem {
   }
 
   async readFile(path: string, option?: FileOption): Promise<string | Buffer> {
+    // eslint-disable-next-line no-async-promise-executor -- internal awaits are wrapped in try/catch that rejects
     return new Promise<string | Buffer>(async (resolve, reject) => {
       let stream;
       try {

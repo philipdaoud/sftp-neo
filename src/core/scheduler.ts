@@ -12,10 +12,10 @@ function lowerBound<T>(array: T[], value: T, comp: (a: T, b: T) => number) {
   while (count > 0) {
     // tslint:disable-next-line no-bitwise
     const step = (count / 2) | 0;
-    let it = first + step;
+    const it = first + step;
 
     if (comp(array[it], value) <= 0) {
-      first = ++it;
+      first = it + 1;
       count -= step + 1;
     } else {
       count = step;

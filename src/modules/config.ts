@@ -28,7 +28,7 @@ const configScheme = z.object({
   sshCustomParams: z.string().optional(),
 
   secure: z.union([z.boolean(), z.literal('control'), z.literal('implicit')]).optional(),
-  secureOptions: z.record(z.any()).optional().nullable(),
+  secureOptions: z.record(z.string(), z.any()).optional().nullable(),
   passive: z.boolean().optional(),
 
   remotePath: z.string(),
@@ -69,7 +69,7 @@ const configScheme = z.object({
   }).optional(),
 
   // Additional fields used in the codebase
-  profiles: z.record(z.any()).optional(),
+  profiles: z.record(z.string(), z.any()).optional(),
   remote: z.string().optional(),
   limitOpenFilesOnRemote: z.union([z.boolean(), z.number()]).optional(),
   filePerm: z.number().optional(),

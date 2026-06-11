@@ -189,6 +189,10 @@ export default class SSHClient extends RemoteClient {
     );
   }
 
+  // These two helpers transparently wrap ssh2's sftp stream methods, so they
+  // intentionally rely on `arguments` (to forward an arbitrary signature) and
+  // alias `this` to reach the SSHClient instance from inside the wrapper.
+  /* eslint-disable @typescript-eslint/no-this-alias, prefer-rest-params */
   private _hookCallForReleaseFileDescriptor(fn) {
     const self = this;
     return function releaseFileDescriptor() {
@@ -233,6 +237,7 @@ export default class SSHClient extends RemoteClient {
       return fn.apply(this, args);
     };
   }
+  /* eslint-enable @typescript-eslint/no-this-alias, prefer-rest-params */
 
   private async _connectSSHClient(
     client,
@@ -257,6 +262,12 @@ export default class SSHClient extends RemoteClient {
 
     return new Promise<void>((resolve, reject) => {
       if (interactiveAuth) {
+        // A password loaded from Secret Storage (or provided in the config)
+        // arrives in `option.password`. Use it to answer the first
+        // password-style (non-echo) keyboard-interactive prompt so users with
+        // keyboard-interactive auth aren't asked to re-enter it every session.
+        const storedPassword = option.password;
+        let storedPasswordUsed = false;
         client.on('keyboard-interactive', function redo(
           name,
           instructions,
@@ -266,14 +277,32 @@ export default class SSHClient extends RemoteClient {
           stackedAnswers
         ) {
           const answers = stackedAnswers ||
-            // load predefined answeres if any
-            (Array.isArray(interactiveAuth) ? interactiveAuth : undefined) ||
+            // load predefined answeres if any (copy so we don't mutate config)
+            (Array.isArray(interactiveAuth) ? interactiveAuth.slice() : undefined) ||
             [];
           if (answers.length < prompts.length) {
+            const prompt = prompts[answers.length];
+
+            if (
+              storedPassword !== undefined &&
+              !storedPasswordUsed &&
+              prompt.echo === false
+            ) {
+              storedPasswordUsed = true;
+              answers.push(storedPassword);
+              redo(
+                name,
+                instructions,
+                instructionsLang,
+                prompts,
+                finish,
+                answers
+              );
+              return;
+            }
+
             config
-              .askForPasswd(
-                `[${option.host}]: ${prompts[answers.length].prompt}`
-              )
+              .askForPasswd(`[${option.host}]: ${prompt.prompt}`)
               .then(answer => {
                 if (answer === undefined) {
                   return reject(

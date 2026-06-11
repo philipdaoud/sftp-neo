@@ -173,10 +173,7 @@ export default class FTPFileSystem extends RemoteFileSystem {
     await this.ftp.ensureDir(dir);
   }
 
-  async list(
-    dir: string,
-    { showHiddenFiles = false } = {}
-  ): Promise<FileEntry[]> {
+  async list(dir: string): Promise<FileEntry[]> {
     const infos = await this.ftp.list(dir);
 
     return infos

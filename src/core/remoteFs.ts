@@ -141,7 +141,7 @@ class KeepAliveRemoteFs {
     return this.pendingPromise;
   }
 
-  invalid(reason: string) {
+  invalid(_reason: string) {
     this.pendingPromise = null;
     this.fs.end();
     this.isValid = false;

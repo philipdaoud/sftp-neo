@@ -218,7 +218,7 @@ export default class RemoteTreeData
 
   async provideTextDocumentContent(
     uri: vscode.Uri,
-    token: vscode.CancellationToken
+    _token: vscode.CancellationToken
   ): Promise<string> {
     const root = this.findRoot(uri);
     if (!root) {

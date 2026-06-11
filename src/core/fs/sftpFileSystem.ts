@@ -291,12 +291,13 @@ export default class SFTPFileSystem extends RemoteFileSystem {
     }
 
     switch (err.code) {
-      case 2:
+      case 2: {
         const parentPath = this.pathResolver.dirname(dir);
         if (parentPath === dir) throw err;
         await this.ensureDir(parentPath);
         await this.mkdir(dir);
         break;
+      }
 
       // In the case of any other error, just see if there's a dir
       // there already.  If so, then hooray!  If not, then something
@@ -314,7 +315,7 @@ export default class SFTPFileSystem extends RemoteFileSystem {
     }
   }
 
-  list(dir: string, { showHiddenFiles = true } = {}): Promise<FileEntry[]> {
+  list(dir: string): Promise<FileEntry[]> {
     return new Promise((resolve, reject) => {
       this.sftp.readdir(dir, (err, result) => {
         if (err) {

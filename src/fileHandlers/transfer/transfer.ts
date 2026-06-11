@@ -413,8 +413,8 @@ async function _sync(
   await targetFs.ensureDir(targetFsPath);
 
   const files = await Promise.all([
-    srcFs.list(srcFsPath).catch(err => []),
-    targetFs.list(targetFsPath).catch(err => []),
+    srcFs.list(srcFsPath).catch(() => []),
+    targetFs.list(targetFsPath).catch(() => []),
   ]);
   await syncFiles(...files);
 }
