@@ -1,8 +1,10 @@
 <div align="center">
 
-# 🚀 SFTP Neo 2026
+# 🚀 SFTP Neo
 
 **Sync your code to any server without leaving VS Code.**
+
+🔒 **More Secure** · 📦 **Updated Libraries** · ⭐ **More Features**
 
 [![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/philipdaoud.sftp-neo?style=flat-square&label=Marketplace&color=007ACC&logo=visualstudiocode)](https://marketplace.visualstudio.com/items?itemName=philipdaoud.sftp-neo)
 [![GitHub Release](https://img.shields.io/github/v/release/philipdaoud/sftp-neo?style=flat-square&label=VSIX&color=181717&logo=github)](https://github.com/philipdaoud/sftp-neo/releases)
