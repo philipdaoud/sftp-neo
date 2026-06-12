@@ -400,7 +400,14 @@ export default class SFTPFileSystem extends RemoteFileSystem {
   ): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       const writer = this.sftp.createWriteStream(path, option) as SFTPWriteStream;
-      writer.once('error', reject).once('finish', resolve); // transffered
+      let settled = false;
+      const done = () => {
+        if (!settled) {
+          settled = true;
+          resolve();
+        }
+      };
+      writer.once('error', reject).once('finish', done).once('close', done);
 
       input.once('error', err => {
         reject(err);

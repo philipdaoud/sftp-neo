@@ -16,6 +16,28 @@
 
 ---
 
+## 🎉 What's New in v3.0 — Remote File Backups
+
+<div align="center">
+
+### 🛡️ Never Lose a File Again
+
+**Automatic versioned backups** on every upload & sync. Before any remote file is overwritten, SFTP Neo saves a copy on the server with a timestamp. Browse, restore, or delete old versions directly from VS Code.
+
+</div>
+
+| | |
+|:---|:---|
+| 🔄 **Automatic Backups** | Every upload/sync creates a timestamped backup on the remote server |
+| 🎛️ **Configurable Retention** | Set how many versions to keep (`versions: 5`) — old ones auto-prune |
+| 📂 **Context-Aware Panel** | Click any file in Remote Explorer → see its backup history instantly |
+| 🔄 **One-Click Restore** | Right-click any backup to restore it to the live remote file |
+| 🔒 **Failsafe Design** | Backup failures never block your upload — your code always goes live |
+
+> ⚡ [**Jump to Backup Setup →**](#-remote-file-backups)
+
+---
+
 ## 📑 Quick Links
 
 [✨ Features](#-features) · [⚡ Quick Start](#-quick-start) · [🔧 Config Examples](#-config-examples) · [🔐 Security](#-security) · [🐛 Debug](#-debug) · [❓ FAQ](./FAQ.md)
@@ -36,6 +58,7 @@
 | 📂 **Multi-Context** | Sync different local folders to different servers |
 | 🔗 **SSH Hopping** | Jump through bastion hosts to reach internal servers |
 | 🖥️ **SSH Terminal** | Open an SSH connection straight from the sidebar |
+| 🛡️ **Remote Backups** | Automatic versioned backups before every upload with restore & prune |
 
 ---
 
@@ -178,6 +201,77 @@ Open it via:
 - Or click the **SFTP** icon in the Activity Bar
 
 Select multiple files with `Ctrl`/`Shift` to download or upload in batches.
+
+---
+
+## 🛡️ Remote File Backups
+
+<div align="center">
+
+**Protect your production files. Every upload is reversible.**
+
+</div>
+
+Before any remote file is overwritten by an upload or sync-to-remote operation, SFTP Neo automatically creates a timestamped backup copy on the server. Browse, restore, or delete backup versions without leaving VS Code.
+
+### 🚀 How It Works
+
+```
+Before Upload                    After Upload
+─────────────────                ─────────────────
+remote/index.php                 remote/index.php  ← new content
+                                 remote/.vsftp-backup/
+                                   └─ index.php.20260612194215007.bak  ← old content
+```
+
+### ⚙️ Configuration
+
+Add the `backup` object to your `.vscode/sftp.json`:
+
+```json
+{
+  "name": "Production",
+  "host": "example.com",
+  "protocol": "sftp",
+  "port": 22,
+  "username": "root",
+  "remotePath": "/var/www/html",
+  "uploadOnSave": true,
+  "backup": {
+    "enabled": true,
+    "folder": ".vsftp-backup",
+    "versions": 5
+  }
+}
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `backup.enabled` | `boolean` | `false` | Master switch. Set to `true` to enable backups. |
+| `backup.folder` | `string` | `".vscode/sftp-backup"` | Remote folder where backups are stored. Resolved relative to `remotePath`. |
+| `backup.versions` | `number` | `5` | Maximum number of backup versions to keep per file. Set to `0` to disable backups even when `enabled` is `true`. |
+
+> 💡 **Tip:** The backup folder is automatically excluded from sync operations and the Remote Explorer — you never have to worry about backups being uploaded or cluttering your file tree.
+
+### 📂 Using the Remote Backups Panel
+
+1. **Enable backups** in your `sftp.json` (see configuration above).
+2. **Upload or sync** a file — a backup is created automatically before the overwrite.
+3. **Click any file** in the **Remote Explorer** panel.
+4. The **Remote Backups** panel updates to show all backup versions for that file, sorted newest → oldest.
+
+| Action | How |
+|--------|-----|
+| 🔄 **Restore** | Right-click a backup version → `Restore Backup`. The current live file is backed up first, then replaced. |
+| 🗑️ **Delete** | Right-click a backup version → `Delete Backup`. |
+| 👁️ **Preview** | Click any backup version to open it in a read-only preview without downloading. |
+
+### 🔒 Safety Guarantees
+
+- **Upload never blocked:** If a backup fails for any reason, the upload still proceeds. Your code always goes live.
+- **Auto-pruning:** Old backups beyond your `versions` limit are cleaned up automatically after each upload.
+- **No local clutter:** Backups live on the remote server, not your machine. The backup folder is invisible to sync.
+- **Context-aware:** The panel only shows backups for the file you have selected in Remote Explorer.
 
 ---
 

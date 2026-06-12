@@ -3,6 +3,8 @@ import * as fileOperations from './fileBaseOperations';
 import { FileSystem, FileType } from './fs';
 import { Task } from './scheduler';
 import logger from '../logger';
+import { BackupConfig } from './fileService';
+import { createBackup } from './backup';
 
 let hasWarnedModifedTimePermission = false;
 
@@ -26,6 +28,8 @@ export interface TransferOption {
   perserveTargetMode: boolean;
   useTempFile?: boolean;
   openSsh?: boolean;
+  backup?: BackupConfig;
+  remotePath?: string;
 }
 
 export default class TransferTask implements Task {
@@ -126,6 +130,18 @@ export default class TransferTask implements Task {
       mtime,
       filePerm
     } = this._TransferOption;
+    // Create a backup of the existing remote file before overwriting it.
+    if (
+      this._transferDirection === TransferDirection.LOCAL_TO_REMOTE &&
+      this.fileType === FileType.File &&
+      this._TransferOption.backup &&
+      this._TransferOption.backup.enabled &&
+      this._TransferOption.backup.versions > 0 &&
+      this._TransferOption.remotePath
+    ) {
+      await createBackup(target, targetFs, this._TransferOption.backup, this._TransferOption.remotePath);
+    }
+
     // Set the mode if it's specified in the config, otherwise get mode from server.
     let mode = filePerm ? parseInt(String(filePerm), 8) : this._TransferOption.mode;
     let targetFd; // Destination file

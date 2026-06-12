@@ -1,3 +1,12 @@
+## 3.0.0 - 2026-06-12
+* **Major Release — Remote File Backups:**
+  * 🛡️ **Automatic versioned backups** before every upload/sync-to-remote. Before a remote file is overwritten, the existing version is copied to a configurable backup folder on the server.
+  * 🎛️ **Configurable retention:** Control via `backup.enabled`, `backup.folder`, and `backup.versions` in `sftp.json`.
+  * 📂 **Remote Backups panel:** New sidebar panel that shows backup versions for the currently selected file in Remote Explorer. Click any file → see its history.
+  * 🔄 **Restore & Delete:** Right-click any backup version to restore it (overwrites current remote file) or delete it. Open any backup in a read-only preview without downloading.
+  * 🧹 **Auto-pruning:** Old backups beyond the configured `versions` limit are automatically deleted after each upload.
+  * 🔒 **Safe by design:** Backup failures never block the upload — your code always goes live. The backup folder is auto-excluded from sync and Remote Explorer.
+
 ## 2.0.8 - 2026-06-11
 * **Fix:** Password and passphrase were only loaded from VS Code Secret Storage when the config explicitly set `"password": null` (or the `"secretStorage"`/`"prompt"` sentinels). If the field was simply omitted — the common convention, especially for FTP configs — it was `undefined` and the stored credential was never retrieved, forcing a re-prompt every session. Both fields now fall back to Secret Storage whenever there is no usable plaintext value (omitted, `null`, empty string, or sentinel), while the plaintext security warning is still shown only for real plaintext passwords.
 

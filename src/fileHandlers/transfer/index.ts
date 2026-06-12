@@ -2,6 +2,7 @@ import { refreshRemoteExplorer } from '../shared';
 import createFileHandler, { FileHandlerContext } from '../createFileHandler';
 import { transfer, sync, TransferOption, SyncOption, TransferDirection } from './transfer';
 import { runHook } from '../../modules/hooks';
+import { remoteBackupsProvider } from '../../modules/remoteBackups';
 
 function createTransferHandle(direction: TransferDirection) {
   return async function handle(this: FileHandlerContext, option) {
@@ -50,6 +51,10 @@ function createTransferHandle(direction: TransferDirection) {
     await transfer(transferConfig, t => scheduler.add(t));
     await scheduler.run();
 
+    if (isUpload) {
+      remoteBackupsProvider.refresh();
+    }
+
     await runHook(postHook, hooks, hookCtx, workspacePath);
   };
 }
@@ -91,6 +96,8 @@ export const sync2Remote = createFileHandler<SyncOption>({
     );
     await scheduler.run();
 
+    remoteBackupsProvider.refresh();
+
     await runHook('postSync', hooks, hookCtx, workspacePath);
   },
   transformOption() {
@@ -106,6 +113,8 @@ export const sync2Remote = createFileHandler<SyncOption>({
       skipCreate: syncOption.skipCreate,
       ignoreExisting: syncOption.ignoreExisting,
       update: syncOption.update,
+      backup: config.backup,
+      remotePath: config.remotePath,
     };
   },
   afterHandle() {
@@ -172,6 +181,8 @@ export const upload = createFileHandler<TransferOption>({
       openSsh: config.openSsh,
       // remoteTimeOffsetInHours: config.remoteTimeOffsetInHours,
       ignore: config.ignore,
+      backup: config.backup,
+      remotePath: config.remotePath,
     };
   },
   afterHandle() {
@@ -190,6 +201,8 @@ export const uploadFile = createFileHandler<TransferOption>({
       openSsh: config.openSsh,
       // remoteTimeOffsetInHours: config.remoteTimeOffsetInHours,
       ignore: config.ignore,
+      backup: config.backup,
+      remotePath: config.remotePath,
     };
   },
   afterHandle() {
@@ -208,6 +221,8 @@ export const uploadFolder = createFileHandler<TransferOption>({
       openSsh: config.openSsh,
       // remoteTimeOffsetInHours: config.remoteTimeOffsetInHours,
       ignore: config.ignore,
+      backup: config.backup,
+      remotePath: config.remotePath,
     };
   },
   afterHandle() {

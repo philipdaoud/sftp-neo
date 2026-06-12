@@ -49,6 +49,7 @@ interface ServiceOption {
     ignoreExisting: boolean;
     update: boolean;
   };
+  backup: BackupConfig;
   ignore: string[];
   ignoreFile: string;
   remoteExplorer: {
@@ -63,6 +64,12 @@ interface WatcherConfig {
   files: false | string;
   autoUpload: boolean;
   autoDelete: boolean;
+}
+
+export interface BackupConfig {
+  enabled: boolean;
+  folder: string;
+  versions: number;
 }
 
 interface SftpOption {
@@ -132,6 +139,16 @@ function filesIgnoredFromConfig(config: FileServiceConfig): string[] {
   const cache = app.fsCache;
   const ignore: string[] =
     config.ignore && config.ignore.length ? config.ignore : [];
+
+  // Auto-exclude backup folder from sync operations.
+  if (config.backup && config.backup.enabled && config.backup.versions > 0 && config.backup.folder) {
+    const backupPattern = config.backup.folder.endsWith('/')
+      ? `${config.backup.folder}**`
+      : `${config.backup.folder}/**`;
+    if (ignore.indexOf(backupPattern) === -1) {
+      ignore.push(backupPattern);
+    }
+  }
 
   const ignoreFile = config.ignoreFile;
   if (!ignoreFile) {

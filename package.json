@@ -2,7 +2,7 @@
   "name": "sftp-neo",
   "displayName": "SFTP Neo",
   "description": "SFTP/FTP sync",
-  "version": "2.0.8",
+  "version": "3.0.0",
   "publisher": "PhilipDaoud",
   "author": "Philip Daoud <philipdaoud@gmail.com> (https://github.com/PhilipDaoud)",
   "engines": {
@@ -51,6 +51,10 @@
         {
           "id": "transferQueue",
           "name": "Transfer Queue"
+        },
+        {
+          "id": "remoteBackups",
+          "name": "Remote Backups"
         }
       ]
     },
@@ -69,6 +73,11 @@
         "view": "transferQueue",
         "contents": "Open a workspace folder and create an SFTP config to get started.",
         "when": "!sftp.enabled"
+      },
+      {
+        "view": "remoteBackups",
+        "contents": "Select a file in Remote Explorer to view its backups.",
+        "when": "sftp.enabled"
       }
     ],
     "configuration": {
@@ -291,6 +300,30 @@
         }
       },
       {
+        "command": "sftp.remoteBackups.refresh",
+        "title": "Refresh Backups",
+        "category": "SFTP",
+        "icon": {
+          "light": "resources/light/refresh.svg",
+          "dark": "resources/dark/refresh.svg"
+        }
+      },
+      {
+        "command": "sftp.remoteBackups.open",
+        "title": "Open Backup",
+        "category": "SFTP"
+      },
+      {
+        "command": "sftp.remoteBackups.restore",
+        "title": "Restore Backup",
+        "category": "SFTP"
+      },
+      {
+        "command": "sftp.remoteBackups.delete",
+        "title": "Delete Backup",
+        "category": "SFTP"
+      },
+      {
         "command": "sftp.revealInExplorer",
         "title": "Reveal in Explorer",
         "category": "SFTP"
@@ -476,6 +509,22 @@
         {
           "command": "sftp.remoteExplorer.refresh",
           "when": "false"
+        },
+        {
+          "command": "sftp.remoteBackups.refresh",
+          "when": "sftp.enabled"
+        },
+        {
+          "command": "sftp.remoteBackups.open",
+          "when": "false"
+        },
+        {
+          "command": "sftp.remoteBackups.restore",
+          "when": "false"
+        },
+        {
+          "command": "sftp.remoteBackups.delete",
+          "when": "false"
         }
       ],
       "explorer/context": [
@@ -587,6 +636,11 @@
           "command": "sftp.transferQueue.clear",
           "when": "view == transferQueue",
           "group": "navigation"
+        },
+        {
+          "command": "sftp.remoteBackups.refresh",
+          "when": "view == remoteBackups",
+          "group": "navigation"
         }
       ],
       "view/item/context": [
@@ -662,6 +716,21 @@
           "command": "sftp.create.file",
           "group": "7_modification",
           "when": "view == remoteExplorer && viewItem != file"
+        },
+        {
+          "command": "sftp.remoteBackups.open",
+          "group": "1_open@1",
+          "when": "view == remoteBackups && viewItem == backupVersion"
+        },
+        {
+          "command": "sftp.remoteBackups.restore",
+          "group": "2_actions@1",
+          "when": "view == remoteBackups && viewItem == backupVersion"
+        },
+        {
+          "command": "sftp.remoteBackups.delete",
+          "group": "7_modification@1",
+          "when": "view == remoteBackups && viewItem == backupVersion"
         }
       ],
       "scm/title": [

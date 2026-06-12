@@ -68,3 +68,8 @@ export const COMMAND_DELETE_SAVED_PASSWORD = 'sftp.deleteSavedPassword';
 
 export const COMMAND_TRANSFER_QUEUE_CANCEL = 'sftp.transferQueue.cancel';
 export const COMMAND_TRANSFER_QUEUE_CLEAR = 'sftp.transferQueue.clear';
+
+export const COMMAND_REMOTE_BACKUPS_REFRESH = 'sftp.remoteBackups.refresh';
+export const COMMAND_REMOTE_BACKUPS_OPEN = 'sftp.remoteBackups.open';
+export const COMMAND_REMOTE_BACKUPS_RESTORE = 'sftp.remoteBackups.restore';
+export const COMMAND_REMOTE_BACKUPS_DELETE = 'sftp.remoteBackups.delete';

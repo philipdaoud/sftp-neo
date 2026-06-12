@@ -130,6 +130,35 @@ Set to true for using default `limit(222)`. Do not set this unless you have to.
 
 **default**: false
 
+## backup
+*object*: Configure remote file backups. Before a remote file is overwritten by an upload or sync-to-remote operation, a copy is stored on the server.
+
+**default**:
+```json
+{
+  "backup": {
+    "enabled": false,
+    "folder": ".vscode/sftp-backup",
+    "versions": 5
+  }
+}
+```
+
+## backup.enabled
+*boolean*: Enable backups of overwritten remote files.
+
+**default**: false
+
+## backup.folder
+*string*: Remote folder where backups are stored. The path is resolved relative to `remotePath`. This folder is automatically excluded from sync and the Remote Explorer.
+
+**default**: `.vscode/sftp-backup`
+
+## backup.versions
+*number*: Maximum number of backup versions to keep per file. Set to `0` to disable backups even when `enabled` is `true`.
+
+**default**: 5
+
 ***
 
 # SFTP only configuration

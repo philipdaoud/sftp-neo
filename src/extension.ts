@@ -12,6 +12,7 @@ import { getWorkspaceFolders, setContextValue } from './host';
 import RemoteExplorer from './modules/remoteExplorer';
 import { initSecrets } from './modules/secrets';
 import { transferQueueProvider } from './modules/transferQueue';
+import { remoteBackupsProvider, backupContentProvider, BACKUP_SCHEME } from './modules/remoteBackups';
 import { registerCommand } from './host';
 import {
   COMMAND_TRANSFER_QUEUE_CANCEL,
@@ -66,6 +67,25 @@ export async function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(
       vscode.window.registerTreeDataProvider('transferQueue', transferQueueProvider)
+    );
+
+    context.subscriptions.push(
+      vscode.window.registerTreeDataProvider('remoteBackups', remoteBackupsProvider)
+    );
+
+    context.subscriptions.push(
+      vscode.workspace.registerTextDocumentContentProvider(BACKUP_SCHEME, backupContentProvider)
+    );
+
+    context.subscriptions.push(
+      app.remoteExplorer.onDidChangeSelection(event => {
+        const selectedFile = event.selection.find(item => !item.isDirectory);
+        if (selectedFile) {
+          remoteBackupsProvider.setSelectedFile(selectedFile.resource.remoteId, selectedFile.resource.fsPath);
+        } else {
+          remoteBackupsProvider.clearSelectedFile();
+        }
+      })
     );
 
     registerCommand(context, COMMAND_TRANSFER_QUEUE_CANCEL, (item: any) => {

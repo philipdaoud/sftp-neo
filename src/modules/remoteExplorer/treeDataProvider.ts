@@ -146,7 +146,16 @@ export default class RemoteTreeData
     const filesExcludeList: string[] =
       config.remoteExplorer && config.remoteExplorer.filesExclude
         ? config.remoteExplorer.filesExclude.concat(DEFAULT_FILES_EXCLUDE)
-        : DEFAULT_FILES_EXCLUDE;
+        : DEFAULT_FILES_EXCLUDE.slice();
+
+    if (config.backup && config.backup.enabled && config.backup.versions > 0 && config.backup.folder) {
+      const backupPattern = config.backup.folder.endsWith('/')
+        ? `${config.backup.folder}**`
+        : `${config.backup.folder}/**`;
+      if (filesExcludeList.indexOf(backupPattern) === -1) {
+        filesExcludeList.push(backupPattern);
+      }
+    }
 
     const ignore = new Ignore(filesExcludeList);
     function filterFile(file: FileEntry) {

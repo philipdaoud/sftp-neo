@@ -59,6 +59,10 @@ export default class RemoteExplorer {
     this._treeDataProvider.refresh(item);
   }
 
+  get onDidChangeSelection(): vscode.Event<vscode.TreeViewSelectionChangeEvent<ExplorerItem>> {
+    return this._explorerView.onDidChangeSelection;
+  }
+
   reveal(item: ExplorerItem): Thenable<void> {
     return item ? this._explorerView.reveal(item) : Promise.resolve();
   }

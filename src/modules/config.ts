@@ -52,6 +52,11 @@ const configScheme = z.object({
     ignoreExisting: z.boolean().optional(),
     update: z.boolean().optional(),
   }).optional(),
+  backup: z.object({
+    enabled: z.boolean().optional(),
+    folder: z.string().optional(),
+    versions: z.number().int().min(0).optional(),
+  }).optional(),
   remoteTimeOffsetInHours: z.number().optional(),
 
   remoteExplorer: z.object({
@@ -118,6 +123,12 @@ const defaultConfig = {
 
   remoteExplorer: {
     order: 0,
+  },
+
+  backup: {
+    enabled: false,
+    folder: '.vscode/sftp-backup',
+    versions: 5,
   },
 };
 
