@@ -1,329 +1,203 @@
-# SFTP Neo
+<div align="center">
 
+# 🚀 SFTP Neo 2026
 
-SFTP/FTP sync extension for VS Code.
+**Sync your code to any server without leaving VS Code.**
 
-> **Fork Notice:** This extension is a fork of [vscode-sftp](https://github.com/Natizyskunk/vscode-sftp) by [Natizyskunk](https://github.com/Natizyskunk), originally based on the abandoned [liximomo/vscode-sftp](https://github.com/liximomo/vscode-sftp). It has been modernized with updated dependencies, new features, and compatibility with the latest VS Code APIs.
+[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/philipdaoud.sftp-neo?style=flat-square&label=Marketplace&color=007ACC&logo=visualstudiocode)](https://marketplace.visualstudio.com/items?itemName=philipdaoud.sftp-neo)
+[![GitHub Release](https://img.shields.io/github/v/release/philipdaoud/sftp-neo?style=flat-square&label=VSIX&color=181717&logo=github)](https://github.com/philipdaoud/sftp-neo/releases)
+[![License](https://img.shields.io/github/license/philipdaoud/sftp-neo?style=flat-square&color=green)](./LICENSE)
 
-- VS Code marketplace : https://marketplace.visualstudio.com/items?itemName=philipdaoud.sftp-neo
-- VSIX release : https://github.com/philipdaoud/sftp-neo/releases/
+</div>
+
+> 🍴 **Forked & Modernized** from [Natizyskunk/vscode-sftp](https://github.com/Natizyskunk/vscode-sftp), originally based on the abandoned [liximomo/vscode-sftp](https://github.com/liximomo/vscode-sftp). Updated dependencies, new features, and full compatibility with the latest VS Code APIs.
 
 ---
 
-VSCode-SFTP enables you to add, edit or delete files within a local directory and have it sync to a remote server directory using different transfer protocols like FTP or SSH. The most basic setup requires only a few lines of configuration with a wide array of specific settings also available to meet the needs of any user. Both powerful and fast, it helps developers save time by allowing the use of a familiar editor and environment.
+## 📑 Quick Links
 
-- Features
-  - [Browser remote with Remote Explorer](#remote-explorer)
-  - Diff local and remote
-  - Sync directory
-  - Upload/Download
-  - Upload on save
-  - File Watcher
-  - Multiple configurations
-  - Switchable profiles
-  - Temp File support
-  - [Secure password storage](#secure-password-storage) (no plaintext passwords in `sftp.json`)
-- [Commands](https://github.com/philipdaoud/sftp-neo/wiki/Commands)
-- [Debug](#debug)
-- [FAQ](#FAQ)
+[✨ Features](#-features) · [⚡ Quick Start](#-quick-start) · [🔧 Config Examples](#-config-examples) · [🔐 Security](#-security) · [🐛 Debug](#-debug) · [❓ FAQ](./FAQ.md)
 
-## Installation
+---
 
-### Method 1 (Recommended : Auto update)
-1. Select Extensions (Ctrl + Shift + X).
-2. Search for `SFTP Neo` and install it directly from VS Code Marketplace : https://marketplace.visualstudio.com/items?itemName=philipdaoud.sftp-neo.
-3. Voilà!
+## ✨ Features
 
-### Method 2 (Manual update)
-To install just follow these steps from within VSCode:
-1. Select Extensions (Ctrl + Shift + X).
-2. Open "More Action" menu (ellipsis on the top) and click "Install from VSIX…".
-3. Open "More Action" menu(ellipsis on the top) and click "Install from VSIX…".
-4. Locate VSIX file and select.
-5. Reload VSCode.
-6. Voilà!
+| Feature | Description |
+|---------|-------------|
+| 🌐 **Remote Explorer** | Browse & manage remote files like a local filesystem |
+| ⬆️⬇️ **Upload / Download** | Single files, folders, or entire projects |
+| 🔄 **Sync** | Bi-directional or one-way directory sync |
+| 💾 **Upload on Save** | Auto-push changes as you code |
+| 👁️ **File Watcher** | Auto-upload on external file changes |
+| 🎭 **Profiles** | Switch between dev / staging / prod in one click |
+| 🔒 **Secure Storage** | Passwords saved in your OS keychain — never in `sftp.json` |
+| 📂 **Multi-Context** | Sync different local folders to different servers |
+| 🔗 **SSH Hopping** | Jump through bastion hosts to reach internal servers |
+| 🖥️ **SSH Terminal** | Open an SSH connection straight from the sidebar |
 
-## Documentation
-- [Home](https://github.com/philipdaoud/sftp-neo/wiki)
-- [Settings](https://github.com/philipdaoud/sftp-neo/wiki/Setting)
-- [Common configuration](https://github.com/philipdaoud/sftp-neo/wiki/Common-Configuration)
-- [SFTP configuration](https://github.com/philipdaoud/sftp-neo/wiki/SFTP-only-Configuration)
-- [FTP confriguration](https://github.com/philipdaoud/sftp-neo/wiki/FTP(s)-only-Configuration)
-- [Commands](https://github.com/philipdaoud/sftp-neo/wiki/Commands)
+---
 
-## Usage
-If the latest files are already on a remote server, you can start with an empty local folder,
-then download your project, and from that point sync.
+## ⚡ Quick Start
 
-1. In `VS Code`, open a local directory you wish to sync to the remote server (or create an empty directory
-that you wish to first download the contents of a remote server folder in order to edit locally).
-2. `Ctrl+Shift+P` on Windows/Linux or `Cmd+Shift+P` on Mac open command palette, run `SFTP: config` command.
-3. A basic configuration file will appear named `sftp.json` under the `.vscode` directory, open and edit the configuration parameters with your remote server information.
+### 1. Install
 
-For instance:
-```json
-{
-    "name": "Profile Name",
-    "host": "name_of_remote_host",
-    "protocol": "ftp",
-    "port": 21,
-    "secure": true,
-    "username": "username",
-    "remotePath": "/public_html/project", // <--- This is the path which will be downloaded if you "Download Project"
-    "password": "password",
-    "uploadOnSave": false
-}
+Grab it from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=philipdaoud.sftp-neo) or install the `.vsix` from [Releases](https://github.com/philipdaoud/sftp-neo/releases).
+
+### 2. Configure
+
+Open the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) and run:
+
 ```
-The password parameter in `sftp.json` is optional, if left out you will be prompted for a password on sync.
-_Note：_ backslashes and other special characters must be escaped with a backslash.
+SFTP: Config
+```
 
-> 🔐 **Tip:** Avoid putting a plaintext password in `sftp.json`. Set `"password": null` (or omit it) and SFTP Neo will prompt you once and offer to save it securely in your OS keychain. See [Secure password storage](#secure-password-storage).
+A `sftp.json` file is created under `.vscode`. Fill in your server details:
 
-4. Save and close the `sftp.json` file.
-5. `Ctrl+Shift+P` on Windows/Linux or `Cmd+Shift+P` on Mac open command palette.
-6. Type `sftp` and you'll now see a number of other commands. You can also access many of the commands from the project's file explorer context menus.
-7. A good one to start with if you want to sync with a remote folder is `SFTP: Download Project`.  This will download the directory shown in the `remotePath` setting in `sftp.json` to your local open directory.
-8. Done - you can now edit locally and after each save it will upload to sync your remote file with the local copy.
-9. Enjoy!
-
-For detailed explanations please go to [wiki](https://github.com/philipdaoud/sftp-neo/wiki).
-
-## Example configurations
-You can see the full list of configuration options [here](https://github.com/philipdaoud/sftp-neo/wiki/configuration).
-
-- [sftp sync extension for VS Code](#sftp-sync-extension-for-vs-code)
-  - [Installation](#installation)
-    - [Method 1 (Recommended : Auto update)](#method-1-recommended--auto-update)
-    - [Method 2 (Manual update)](#method-2-manual-update)
-  - [Documentation](#documentation)
-  - [Usage](#usage)
-  - [Example configurations](#example-configurations)
-    - [Simple](#simple)
-    - [Profiles](#profiles)
-    - [Multiple Context](#multiple-context)
-    - [Connection Hopping](#connection-hopping)
-      - [Single Hop](#single-hop)
-      - [Multiple Hop](#multiple-hop)
-    - [Configuration in User Setting](#configuration-in-user-setting)
-  - [Remote Explorer](#remote-explorer)
-    - [Multiple Select](#multiple-select)
-    - [Order](#order)
-  - [Secure password storage](#secure-password-storage)
-  - [Debug](#debug)
-  - [FAQ](#faq)
-
-### Simple
 ```json
 {
-  "host": "host",
-  "username": "username",
-  "remotePath": "/remote/workspace"
+  "name": "My Server",
+  "host": "example.com",
+  "protocol": "sftp",
+  "port": 22,
+  "username": "root",
+  "remotePath": "/var/www/html",
+  "uploadOnSave": true
 }
 ```
 
-### Profiles
+> 💡 **No password?** Leave `"password"` out (or set it to `null`) — you'll be prompted once and can save it securely to your OS keychain. See [🔐 Security](#-security).
+
+### 3. Go!
+
+| Action | Command Palette |
+|--------|-----------------|
+| Download project | `SFTP: Download Project` |
+| Upload current file | `SFTP: Upload Active File` |
+| Sync local → remote | `SFTP: Sync Local -> Remote` |
+| Browse remote | `View: Show SFTP` (sidebar) |
+
+Right-click any file or folder in the **Explorer** for quick upload / download / diff options.
+
+---
+
+## 🔧 Config Examples
+
+### 🎭 Profiles
+Switch between environments on the fly:
+
 ```json
 {
-  "username": "username",
-  "password": "password",
-  "remotePath": "/remote/workspace/a",
-  "watcher": {
-    "files": "dist/*.{js,css}",
-    "autoUpload": false,
-    "autoDelete": false
-  },
+  "username": "deploy",
+  "remotePath": "/app",
   "profiles": {
-    "dev": {
-      "host": "dev-host",
-      "remotePath": "/dev",
-      "uploadOnSave": true
-    },
-    "prod": {
-      "host": "prod-host",
-      "remotePath": "/prod"
-    }
+    "dev": { "host": "dev.example.com", "uploadOnSave": true },
+    "prod": { "host": "prod.example.com", "uploadOnSave": false }
   },
   "defaultProfile": "dev"
 }
 ```
 
-_Note：_ `context` and `watcher` are only available at root level.
+Use `SFTP: Set Profile` to switch.
 
-Use `SFTP: Set Profile` to switch profile.
+### 📂 Multiple Contexts
+Sync different parts of your project to different places:
 
-### Multiple Context
-The context must **not be same**.
 ```json
 [
   {
-    "name": "server1",
-    "context": "project/build",
-    "host": "host",
-    "username": "username",
-    "password": "password",
-    "remotePath": "/remote/project/build"
+    "name": "Frontend",
+    "context": "client/dist",
+    "host": "cdn.example.com",
+    "remotePath": "/static"
   },
   {
-    "name": "server2",
-    "context": "project/src",
-    "host": "host",
-    "username": "username",
-    "password": "password",
-    "remotePath": "/remote/project/src"
+    "name": "Backend",
+    "context": "server",
+    "host": "api.example.com",
+    "remotePath": "/var/api"
   }
 ]
 ```
 
-_Note：_ `name` is required in this mode.
+### 🔗 Connection Hopping
+Reach a server through a bastion host:
 
-### Connection Hopping
-You can connect to a target server through a proxy with ssh protocol.
-
-_Note：_ Variable substitution is not working in a hop configuration.
-
-#### Single Hop
-local -> hop -> target
 ```json
 {
-  "name": "target",
-  "remotePath": "/path/in/target",
-
-  // hop
-  "host": "hopHost",
-  "username": "hopUsername",
-  "privateKeyPath": "/Users/localUser/.ssh/id_rsa", // <-- The key file is assumed on the local.
-
+  "name": "Target",
+  "host": "bastion.example.com",
+  "username": "jumpuser",
+  "privateKeyPath": "~/.ssh/id_rsa",
   "hop": {
-    // target
-    "host": "targetHost",
-    "username": "targetUsername",
-    "privateKeyPath": "/Users/hopUser/.ssh/id_rsa", // <-- The key file is assumed on the hop.
+    "host": "target.internal",
+    "username": "appuser",
+    "privateKeyPath": "~/.ssh/id_rsa"
   }
 }
 ```
 
-#### Multiple Hop
-local -> hopa -> hopb -> target
-```json
-{
-  "name": "target",
-  "remotePath": "/path/in/target",
+> 📖 For the full list of options check the [Wiki](https://github.com/philipdaoud/sftp-neo/wiki/Configuration).
 
-  // hopa
-  "host": "hopAHost",
-  "username": "hopAUsername",
-  "privateKeyPath": "/Users/hopAUsername/.ssh/id_rsa" // <-- The key file is assumed on the local.
+---
 
-  "hop": [
-    // hopb
-    {
-      "host": "hopBHost",
-      "username": "hopBUsername",
-      "privateKeyPath": "/Users/hopaUser/.ssh/id_rsa" // <-- The key file is assumed on the hopa.
-    },
+## 🔐 Security
 
-    // target
-    {
-      "host": "targetHost",
-      "username": "targetUsername",
-      "privateKeyPath": "/Users/hopbUser/.ssh/id_rsa", // <-- The key file is assumed on the hopb.
-    }
-  ]
-}
-```
+SFTP Neo stores passwords & passphrases in your **OS credential store** (macOS Keychain, Windows Credential Manager, Linux libsecret) via VS Code's Secret Storage API — so your `sftp.json` stays clean and commit-safe.
 
-### Configuration in User Setting
-You can use `remote` to tell sftp to get the configuration from [remote-fs](https://github.com/liximomo/vscode-remote-fs).
+**How to use it:**
 
-In User Setting:
-```json
-"remotefs.remote": {
-  "dev": {
-    "scheme": "sftp",
-    "host": "host",
-    "username": "username",
-    "rootPath": "/path/to/somewhere"
-  },
-  "projectX": {
-    "scheme": "sftp",
-    "host": "host",
-    "username": "username",
-    "privateKeyPath": "/Users/xx/.ssh/id_rsa",
-    "rootPath": "/home/foo/some/projectx"
-  }
-}
-```
-
-In sftp.json:
-```json
-{
-  "remote": "dev",
-  "remotePath": "/home/xx/",
-  "uploadOnSave": false,
-  "ignore": [".vscode", ".git", ".DS_Store"]
-}
-```
-
-## Remote Explorer
-![remote-explorer-preview](https://raw.githubusercontent.com/philipdaoud/sftp-neo/master/assets/showcase/remote-explorer.png)
-
-Remote Explorer lets you explore files in remote. You can open Remote Explorer by:
-
-1. Run Command `View: Show SFTP`.
-2. Click SFTP view in Activity Bar.
-
-You can only view a files content with Remote Explorer. Run command `SFTP: Edit in Local` to edit it in local.
-
-### Multiple Select
-You are able to select multiple files/folders at once on the remote server to download and upload. You can do it simply by holding down Ctrl or Shift while selecting all desired files, just like on the regular explorer view.
-
-_Note：_ You need to manually refresh the parent folder after you **delete** a file if the explorer isn't correctly updated.
-
-### Order
-You can order the remote Explorer by adding the `remoteExplorer.order` parameter inside your `sftp.json` config file.
-
-In sftp.json:
-```json
-{
-  "remoteExplorer": {
-    "order": 1 // <-- Default value is 0.
-  }
-}
-```
-
-## Secure password storage
-
-SFTP Neo can store your password and key passphrase **securely in your operating system's credential store** (Keychain on macOS, Credential Manager on Windows, libsecret/keyring on Linux) using VS Code's built‑in [Secret Storage](https://code.visualstudio.com/api/references/vscode-api#SecretStorage) API — so you never have to keep a plaintext password in `sftp.json`.
-
-### How it works
-1. In `sftp.json`, set the password (or passphrase) to `null` instead of a literal value:
+1. Set `"password": null` (or omit it) in `sftp.json`:
    ```json
    {
-     "host": "host",
-     "username": "username",
+     "host": "example.com",
+     "username": "root",
      "password": null,
-     "remotePath": "/remote/workspace"
+     "remotePath": "/var/www"
    }
    ```
-   You can also use `"prompt"` or `"secretStorage"` as the value — all three behave the same way.
-2. The first time you connect, SFTP Neo prompts you for the password and asks **“Save password … to Secret Storage?”**. Choose **Save** to store it encrypted in your OS keychain.
-3. On subsequent connections the saved credential is loaded automatically — nothing sensitive is written to disk in your project.
+2. Connect — you'll be prompted for the password.
+3. Click **"Save password to Secret Storage"**.
+4. Future connections are automatic & encrypted.
 
-The same flow applies to a private key `passphrase` (set `"passphrase": null`).
+The same works for private key `passphrase`.
 
-### Plaintext warning
-If a literal `"password"` is left in `sftp.json`, SFTP Neo shows a security warning reminding you to switch to Secret Storage. Plaintext passwords still work, but they may end up committed to source control — using `null` is strongly recommended.
+> 🧹 Manage saved credentials anytime with `SFTP: Delete Saved Password`.
 
-### Managing saved credentials
-Run **`SFTP: Delete Saved Password`** from the command palette to view and remove credentials that were stored in Secret Storage.
+---
 
-## Debug
-1. Open User Settings.
-  - On Windows/Linux - `File > Preferences > Settings`
-  - On macOS - `Code > Preferences > Settings`
-2. Set `sftp.debug` to `true` and reload vscode.
-3. View the logs in `View > Output > sftp`.
+## 🖥️ Remote Explorer
 
-## FAQ
-You can see all the Frequently Asked Questions [here](./FAQ.md).
+Browse your remote server directly in the VS Code sidebar.
 
+![Remote Explorer Preview](https://raw.githubusercontent.com/philipdaoud/sftp-neo/master/assets/showcase/remote-explorer.png)
+
+Open it via:
+- Command Palette → `View: Show SFTP`
+- Or click the **SFTP** icon in the Activity Bar
+
+Select multiple files with `Ctrl`/`Shift` to download or upload in batches.
+
+---
+
+## 🐛 Debug
+
+Need to troubleshoot?
+
+1. Open **Settings** (`Ctrl+,` / `Cmd+,`).
+2. Search for `sftp.debug` and set it to `true`.
+3. Reload VS Code.
+4. View logs in **Output → SFTP**.
+
+---
+
+## ❓ FAQ
+
+See [FAQ.md](./FAQ.md) for common questions and solutions.
+
+---
+
+<div align="center">
+
+Made with ☕ & 🐛 squashing by [Philip Daoud](https://github.com/PhilipDaoud)
+
+</div>
