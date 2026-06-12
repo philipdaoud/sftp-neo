@@ -7,7 +7,7 @@
 🔒 **More Secure** · 📦 **Updated Libraries** · ⭐ **More Features**
 
 [![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/philipdaoud.sftp-neo?style=flat-square&label=Marketplace&color=007ACC&logo=visualstudiocode)](https://marketplace.visualstudio.com/items?itemName=philipdaoud.sftp-neo)
-[![GitHub Release](https://img.shields.io/github/v/release/philipdaoud/sftp-neo?style=flat-square&label=VSIX&color=181717&logo=github)](https://github.com/philipdaoud/sftp-neo/releases)
+[![GitHub Repo](https://img.shields.io/github/v/release/philipdaoud/sftp-neo?style=flat-square&label=VSIX&color=181717&logo=github)](https://github.com/philipdaoud/sftp-neo)
 [![License](https://img.shields.io/github/license/philipdaoud/sftp-neo?style=flat-square&color=green)](./LICENSE)
 
 </div>
