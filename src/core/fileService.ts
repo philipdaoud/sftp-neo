@@ -140,6 +140,14 @@ function filesIgnoredFromConfig(config: FileServiceConfig): string[] {
   const ignore: string[] =
     config.ignore && config.ignore.length ? config.ignore : [];
 
+  // Auto-exclude system files that FTP servers often reject (e.g. cPanel quota file).
+  const systemFiles = ['**/.ftpquota'];
+  systemFiles.forEach(pattern => {
+    if (ignore.indexOf(pattern) === -1) {
+      ignore.push(pattern);
+    }
+  });
+
   // Auto-exclude backup folder from sync operations.
   if (config.backup && config.backup.enabled && config.backup.versions > 0 && config.backup.folder) {
     const backupPattern = config.backup.folder.endsWith('/')

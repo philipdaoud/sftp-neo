@@ -138,7 +138,7 @@ export function uriFromExplorerContextOrEditorContext(item, items): undefined | 
   return;
 }
 
-// selected folder or configContext
+// selected folder, active editor folder, or project context
 export function selectFolderFallbackToConfigContext(item, items): Promise<undefined | Uri | Uri[]> {
   // from explorer or editor context
   if (item) {
@@ -153,6 +153,13 @@ export function selectFolderFallbackToConfigContext(item, items): Promise<undefi
       // from remote explorer
       return Promise.resolve(item.resource.uri);
     }
+  }
+
+  // When invoked from the command palette, sync the active editor's folder
+  // rather than the entire project root.
+  const activeFolder = getActiveFolder();
+  if (activeFolder) {
+    return Promise.resolve(activeFolder);
   }
 
   return selectContext();

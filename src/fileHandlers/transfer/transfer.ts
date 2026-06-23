@@ -405,11 +405,8 @@ async function _sync(
       _sync(
         {
           ...config,
-          srcFs: config.targetFs,
-          targetFs: config.srcFs,
           srcFsPath: src,
           targetFsPath: target,
-          transferDirection: altDirection,
         },
         collect,
         deleted

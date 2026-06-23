@@ -1,8 +1,11 @@
-## 3.0.1 - 2026-06-23
+## 3.0.2 - 2026-06-23
 * **Fix:** FTP connections failed with `this._client.on is not a function` because basic-ftp's `Client` is not an EventEmitter. Added a no-op `onDisconnected()` override for FTP.
 * **Fix:** FTP sync/commands could fail with `Client is closed because User launched a task while another one is still running` when multiple operations (sync, Remote Explorer refresh, etc.) ran on the same connection. Wrapped the basic-ftp client in a serialization proxy so only one command executes at a time.
 * **Fix:** "Sync Both Directions" tried to download remote-only / newer-on-remote files (e.g. `.ftpquota`, `.vscode`) using the local filesystem, causing `ENOENT: no such file or directory, open '/.<file>'` and closing the FTP client. The sync logic now correctly swaps both the source/target file systems and paths when the reverse direction is needed.
+* **Fix:** Reverted an overreach in the sync fix above that unconditionally swapped source/target file systems when recursing into directories that exist on both sides. This caused normal sync (and dotfiles inside shared directories) to use the wrong file system, leading to `ENOENT` and `Client is closed because User launched a task while another one is still running` errors.
 * **Fix:** Added missing `await`s for `chmod`, `transferFile`, and deletion side-effects in the transfer/sync pipeline.
+* **Change:** When a sync command is invoked from the Command Palette with no folder selected, it now syncs the active editor's folder instead of the entire project root.
+* **Change:** `.ftpquota` (cPanel/system quota file) is now ignored by default during sync and transfer operations, because many FTP servers reject attempts to read or write it.
 
 ## 3.0.0 - 2026-06-12
 * **Major Release — Remote File Backups:**

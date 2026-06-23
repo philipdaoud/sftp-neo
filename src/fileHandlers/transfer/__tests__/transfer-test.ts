@@ -138,6 +138,8 @@ describe('transfer algorithm', () => {
           '/remote/c/d/d-b',
         ].formatSep().sort()
       );
+      // Regression check: nested shared directories must keep the original sync direction.
+      expect(task.every(t => t.transferType === TransferDirection.LOCAL_TO_REMOTE)).toBe(true);
     });
 
     test('sync --delete', async () => {
