@@ -1,13 +1,50 @@
 import { Client } from 'basic-ftp';
 import RemoteClient, { ConnectOption } from './remoteClient';
 
+/**
+ * basic-ftp does not support concurrent commands on a single control connection.
+ * Wrap the client so every method call is queued and executed one at a time.
+ */
+function createSerializedClient(client: Client): Client {
+  let queue: Promise<unknown> = Promise.resolve();
+
+  const enqueue = <T>(task: () => Promise<T>): Promise<T> => {
+    const next = queue.then(
+      () => task(),
+      () => task()
+    );
+    queue = next.then(
+      () => {},
+      () => {}
+    );
+    return next;
+  };
+
+  return new Proxy(client, {
+    get(target, prop) {
+      const value = target[prop];
+      if (typeof value === 'function') {
+        return function (...args: any[]) {
+          return enqueue(() => value.apply(target, args));
+        };
+      }
+      return value;
+    },
+  }) as Client;
+}
+
 export default class FTPClient extends RemoteClient {
   _initClient() {
-    return new Client(this._option.connectTimeout || 10000);
+    const client = new Client(this._option.connectTimeout || 10000);
+    return createSerializedClient(client);
   }
 
   _hasProvideAuth(connectOption: ConnectOption) {
     return connectOption.password != undefined;
+  }
+
+  onDisconnected() {
+    // basic-ftp Client is not an EventEmitter and has no .on() method.
   }
 
   async _doConnect(connectOption: ConnectOption): Promise<void> {

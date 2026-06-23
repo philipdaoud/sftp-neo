@@ -86,7 +86,7 @@ async function transferFolder(
   // If dirPerm is configured, we chmod the remote directory after creation.
   if(config.transferOption.dirPerm) {
     logger.info("chmod remote directory as configured by dirPerm, dirPerm is: ", config.transferOption.dirPerm)
-    targetFs.chmod(targetFsPath, parseInt(String(config.transferOption.dirPerm), 8))
+    await targetFs.chmod(targetFsPath, parseInt(String(config.transferOption.dirPerm), 8))
   }
 
   const fileEntries = await srcFs.list(srcFsPath);
@@ -160,7 +160,7 @@ async function transferWithType(
         // If dirPerm is configured, we chmod the remote directory after creation.
         if(config.transferOption.dirPerm) {
           logger.info("Running chmod on remote directory with perm: ", config.transferOption.dirPerm)
-          targetFs.chmod(targetFs.pathResolver.dirname(targetFsPath), parseInt(String(config.transferOption.dirPerm), 8));
+          await targetFs.chmod(targetFs.pathResolver.dirname(targetFsPath), parseInt(String(config.transferOption.dirPerm), 8));
         }
       }
       // <<< save before upload: start
@@ -176,7 +176,7 @@ async function transferWithType(
         }
       }
       // save before upload: end >>>
-      transferFile(config, fileType, collect);
+      await transferFile(config, fileType, collect);
       break;
     default:
       logger.warn(`Unsupported file type (type = ${fileType}). File ${config.srcFsPath}`);
@@ -215,7 +215,7 @@ async function _sync(
   }
 
   const altDirection = getAltDirection(transferDirection);
-  const syncFiles = (srcFileEntries: FileEntry[], desFileEntries: FileEntry[]) => {
+  const syncFiles = async (srcFileEntries: FileEntry[], desFileEntries: FileEntry[]) => {
     const srcFileTable = toHash(srcFileEntries, 'id', fileEntry => ({
       ...fileEntry,
       id: fileEntry.name,
@@ -227,7 +227,7 @@ async function _sync(
     }));
 
     const file2trans: [string, string, TransferDirection, InternalTransferOption][] = [];
-    const dir2trans: [string, string][] = [];
+    const dir2trans: [string, string, TransferDirection][] = [];
     const dir2sync: [string, string][] = [];
 
     const fileMissed: string[] = [];
@@ -297,7 +297,7 @@ async function _sync(
       const fspath = targetFs.pathResolver.join(targetFsPath, srcFile.name);
       switch (srcFile.type) {
         case FileType.Directory:
-          dir2trans.push([srcFile.fspath, fspath]);
+          dir2trans.push([srcFile.fspath, fspath, transferDirection]);
           break;
         case FileType.File:
         case FileType.SymbolicLink:
@@ -326,7 +326,7 @@ async function _sync(
           const fspath = srcFs.pathResolver.join(srcFsPath, file.name);
           switch (file.type) {
             case FileType.Directory:
-              dir2trans.push([file.fspath, fspath]);
+              dir2trans.push([file.fspath, fspath, altDirection]);
               break;
             case FileType.File:
             case FileType.SymbolicLink:
@@ -366,13 +366,16 @@ async function _sync(
     }
 
     // side-effect
-    fileMissed.forEach(file => removeFile(file, targetFs, FileType.File, transferOption));
-    dirMissed.forEach(file => removeFile(file, targetFs, FileType.Directory, transferOption));
+    await Promise.all(fileMissed.map(file => removeFile(file, targetFs, FileType.File, transferOption)));
+    await Promise.all(dirMissed.map(file => removeFile(file, targetFs, FileType.Directory, transferOption)));
 
-    const transFilePromise = file2trans.map(([src, target, direction, option]) =>
-      transferFile(
+    const transFilePromise = file2trans.map(([src, target, direction, option]) => {
+      const isReversed = direction === altDirection;
+      return transferFile(
         {
           ...config,
+          srcFs: isReversed ? config.targetFs : config.srcFs,
+          targetFs: isReversed ? config.srcFs : config.targetFs,
           transferDirection: direction,
           transferOption: option,
           srcFsPath: src,
@@ -380,26 +383,33 @@ async function _sync(
         },
         FileType.File,
         collect
-      )
-    );
+      );
+    });
 
-    const transDirPromise = dir2trans.map(([src, target]) =>
-      transferFolder(
+    const transDirPromise = dir2trans.map(([src, target, direction]) => {
+      const isReversed = direction === altDirection;
+      return transferFolder(
         {
           ...config,
+          srcFs: isReversed ? config.targetFs : config.srcFs,
+          targetFs: isReversed ? config.srcFs : config.targetFs,
+          transferDirection: direction,
           srcFsPath: src,
           targetFsPath: target,
         },
         collect
-      )
-    );
+      );
+    });
 
     const syncPromise = dir2sync.map(([src, target]) =>
       _sync(
         {
           ...config,
+          srcFs: config.targetFs,
+          targetFs: config.srcFs,
           srcFsPath: src,
           targetFsPath: target,
+          transferDirection: altDirection,
         },
         collect,
         deleted

@@ -2,7 +2,7 @@
   "name": "sftp-neo",
   "displayName": "SFTP Neo",
   "description": "SFTP/FTP sync",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "publisher": "PhilipDaoud",
   "author": "Philip Daoud <philipdaoud@gmail.com> (https://github.com/PhilipDaoud)",
   "engines": {

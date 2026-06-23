@@ -1,3 +1,9 @@
+## 3.0.1 - 2026-06-23
+* **Fix:** FTP connections failed with `this._client.on is not a function` because basic-ftp's `Client` is not an EventEmitter. Added a no-op `onDisconnected()` override for FTP.
+* **Fix:** FTP sync/commands could fail with `Client is closed because User launched a task while another one is still running` when multiple operations (sync, Remote Explorer refresh, etc.) ran on the same connection. Wrapped the basic-ftp client in a serialization proxy so only one command executes at a time.
+* **Fix:** "Sync Both Directions" tried to download remote-only / newer-on-remote files (e.g. `.ftpquota`, `.vscode`) using the local filesystem, causing `ENOENT: no such file or directory, open '/.<file>'` and closing the FTP client. The sync logic now correctly swaps both the source/target file systems and paths when the reverse direction is needed.
+* **Fix:** Added missing `await`s for `chmod`, `transferFile`, and deletion side-effects in the transfer/sync pipeline.
+
 ## 3.0.0 - 2026-06-12
 * **Major Release — Remote File Backups:**
   * 🛡️ **Automatic versioned backups** before every upload/sync-to-remote. Before a remote file is overwritten, the existing version is copied to a configurable backup folder on the server.
