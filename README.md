@@ -16,6 +16,16 @@
 
 ---
 
+## 🎉 What's New in v3.0.5
+
+### 🔕 "Don't Show Again" for Plaintext Password Warning
+If you choose to keep a password in `sftp.json`, the security warning now offers a **"Don't show again"** button. Your choice is saved in the global user setting `sftp.suppressPlaintextPasswordWarning`, so the warning stays suppressed across all workspaces.
+
+### 🖥️ Workspace-Scoped SSH Host Keys
+Multiple projects connecting to the same development server (same IP and port) — common with containers or multi-tenant setups — no longer trigger false **"SSH host key has CHANGED"** errors. Host keys are now stored per workspace, and existing `host:port` entries are migrated automatically when the key still matches.
+
+---
+
 ## 🎉 What's New in v3.0 — Remote File Backups
 
 <div align="center">
@@ -59,6 +69,8 @@
 | 🔗 **SSH Hopping** | Jump through bastion hosts to reach internal servers |
 | 🖥️ **SSH Terminal** | Open an SSH connection straight from the sidebar |
 | 🛡️ **Remote Backups** | Automatic versioned backups before every upload with restore & prune |
+| 🔕 **Password Warning Toggle** | "Don't show again" on the plaintext-password security warning |
+| 🖥️ **Per-Workspace Host Keys** | Independent SSH known-host entries per workspace for shared dev servers |
 
 ---
 

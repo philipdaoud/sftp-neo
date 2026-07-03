@@ -8,6 +8,7 @@ export interface ConnectOption {
   password?: string;
   connectTimeout?: number;
   debug(x: string): void;
+  workspace?: string;
 
   // ssh-only
   privateKeyPath?: string;

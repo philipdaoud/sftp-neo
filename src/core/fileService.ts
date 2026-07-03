@@ -7,7 +7,7 @@ import logger from '../logger';
 import { getUserSetting, showWarningMessage } from '../host';
 import { replaceHomePath, resolvePath } from '../helper';
 import { getCredential } from '../modules/secrets';
-import { SETTING_KEY_REMOTE } from '../constants';
+import { SETTING_KEY_REMOTE, EXTENSION_NAME } from '../constants';
 import upath from './upath';
 import Ignore from './ignore';
 import { FileSystem } from './fs';
@@ -580,16 +580,30 @@ export default class FileService {
       hostInfo.password !== 'prompt';
 
     if (passwordIsPlaintext) {
-      showWarningMessage(
-        `Security warning: "${hostInfo.host}" has a plaintext password in sftp.json. ` +
-        `Use \`"password": null\` and store credentials via "SFTP: Delete Saved Password" / Secret Storage instead.`
-      );
+      const extConfig = getUserSetting(EXTENSION_NAME);
+      if (!extConfig.get<boolean>('suppressPlaintextPasswordWarning', false)) {
+        const result = await showWarningMessage(
+          `Security warning: "${hostInfo.host}" has a plaintext password in sftp.json. ` +
+          `Use \`"password": null\` and store credentials via "SFTP: Delete Saved Password" / Secret Storage instead.`,
+          "Don't show again"
+        );
+        if (result === "Don't show again") {
+          await extConfig.update('suppressPlaintextPasswordWarning', true, true);
+        }
+      }
     } else {
       // No usable plaintext password — the field is omitted, null, empty, or a
       // sentinel. Fall back to a credential saved in Secret Storage (if any) so
       // users who saved their password aren't prompted again every session.
       hostInfo.password = (await getCredential(hostInfo.host, hostInfo.username, 'password')) || undefined;
     }
+
+    // Tag the connection with the workspace so host-key verification can scope
+    // known-host entries per workspace. This allows multiple projects on the same
+    // dev server (same IP:port) to have independent host keys without sharing a
+    // single global entry.
+    hostInfo.workspace = this.workspace;
+
     // Load saved passphrase from Secret Storage whenever there is no usable
     // plaintext value — omitted, null, empty, or a sentinel.
     const passphraseIsPlaintext =

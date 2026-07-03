@@ -2,7 +2,7 @@
   "name": "sftp-neo",
   "displayName": "SFTP Neo",
   "description": "SFTP/FTP sync",
-  "version": "3.0.2",
+  "version": "3.0.5",
   "publisher": "PhilipDaoud",
   "author": "Philip Daoud <philipdaoud@gmail.com> (https://github.com/PhilipDaoud)",
   "engines": {
@@ -98,6 +98,11 @@
           "type": "boolean",
           "default": false,
           "description": "\"Download\" instead of \"View Content\" when open file in Remote Explorer"
+        },
+        "sftp.suppressPlaintextPasswordWarning": {
+          "type": "boolean",
+          "default": false,
+          "description": "Suppress the security warning shown when a plaintext password is stored in sftp.json."
         }
       }
     },

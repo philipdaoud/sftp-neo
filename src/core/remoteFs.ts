@@ -111,7 +111,7 @@ class KeepAliveRemoteFs {
           'Reject'
         );
         return accepted ? 'accept' : 'reject';
-      }).catch(err => {
+      }, option.workspace).catch(err => {
         showWarningMessage(err.message);
         return false;
       });

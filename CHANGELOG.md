@@ -1,3 +1,7 @@
+## 3.0.5 - 2026-07-03
+* **Feature:** Plaintext password warning now includes a **"Don't show again"** button. Clicking it sets the user setting `sftp.suppressPlaintextPasswordWarning` to `true` and suppresses the warning across all workspaces.
+* **Feature:** Workspace-scoped SSH host-key storage. Known-host entries are now stored per workspace (`host:port:workspace`) with automatic migration of existing `host:port` entries. This allows multiple projects that connect to the same development server (same IP:port) to have independent host keys, avoiding false "SSH host key has CHANGED" warnings in multi-tenant/container environments.
+
 ## 3.0.2 - 2026-06-23
 * **Fix:** FTP connections failed with `this._client.on is not a function` because basic-ftp's `Client` is not an EventEmitter. Added a no-op `onDisconnected()` override for FTP.
 * **Fix:** FTP sync/commands could fail with `Client is closed because User launched a task while another one is still running` when multiple operations (sync, Remote Explorer refresh, etc.) ran on the same connection. Wrapped the basic-ftp client in a serialization proxy so only one command executes at a time.

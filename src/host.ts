@@ -79,7 +79,7 @@ export function showInformationMessage(message: string, ...items: string[]) {
   return vscode.window.showInformationMessage(message, ...items);
 }
 
-export function showWarningMessage(message: string, ...items: string[]) {
+export function showWarningMessage(message: string, ...items: string[]): Thenable<string | undefined> {
   return vscode.window.showWarningMessage(message, ...items);
 }
 
