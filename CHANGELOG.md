@@ -1,3 +1,11 @@
+## 3.1.0 - 2026-07-04
+* **Major Feature — Local or Remote File Backups:**
+  * 💻 **Choose backup storage location** via new `backup.location` option in `sftp.json`. Set to `"remote"` (default) to keep backups on the server under `remotePath`, or `"local"` to store them in the workspace root while preserving the remote directory layout.
+  * 🛡️ **Automatic versioned backups** still run before every upload/sync-to-remote, with configurable retention via `backup.enabled`, `backup.folder`, and `backup.versions`.
+  * 📂 **Backups panel renamed and made dynamic:** The sidebar panel is now titled **Backups** by default and automatically switches to **Remote Backups** or **Local Backups** based on the selected configuration's `backup.location` setting.
+  * 🔄 **Restore & Delete work everywhere:** Backup commands now read from and write to the correct filesystem (local or remote) depending on where each backup version is stored.
+  * 🔒 **Safe by design:** Backup failures never block the upload. Local backup folders are auto-excluded from sync so they are never auto-uploaded.
+
 ## 3.0.5 - 2026-07-03
 * **Feature:** Plaintext password warning now includes a **"Don't show again"** button. Clicking it sets the user setting `sftp.suppressPlaintextPasswordWarning` to `true` and suppresses the warning across all workspaces.
 * **Feature:** Workspace-scoped SSH host-key storage. Known-host entries are now stored per workspace (`host:port:workspace`) with automatic migration of existing `host:port` entries. This allows multiple projects that connect to the same development server (same IP:port) to have independent host keys, avoiding false "SSH host key has CHANGED" warnings in multi-tenant/container environments.
