@@ -2,7 +2,7 @@
   "name": "sftp-neo",
   "displayName": "SFTP Neo",
   "description": "SFTP/FTP sync",
-  "version": "3.0.5",
+  "version": "3.1.0",
   "publisher": "PhilipDaoud",
   "author": "Philip Daoud <philipdaoud@gmail.com> (https://github.com/PhilipDaoud)",
   "engines": {
@@ -54,7 +54,7 @@
         },
         {
           "id": "remoteBackups",
-          "name": "Remote Backups"
+          "name": "Backups"
         }
       ]
     },

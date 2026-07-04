@@ -11,7 +11,7 @@ export default checkCommand({
       return;
     }
 
-    const uri = createBackupUri(item.fileService.id, item.backupPath);
+    const uri = createBackupUri(item.fileService.id, item.backupPath, item.location);
     const doc = await vscode.workspace.openTextDocument(uri);
     await vscode.window.showTextDocument(doc, { preview: true });
   },

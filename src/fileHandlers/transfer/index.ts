@@ -115,6 +115,7 @@ export const sync2Remote = createFileHandler<SyncOption>({
       update: syncOption.update,
       backup: config.backup,
       remotePath: config.remotePath,
+      localBasePath: this.fileService.baseDir,
     };
   },
   afterHandle() {
@@ -183,6 +184,7 @@ export const upload = createFileHandler<TransferOption>({
       ignore: config.ignore,
       backup: config.backup,
       remotePath: config.remotePath,
+      localBasePath: this.fileService.baseDir,
     };
   },
   afterHandle() {
@@ -203,6 +205,7 @@ export const uploadFile = createFileHandler<TransferOption>({
       ignore: config.ignore,
       backup: config.backup,
       remotePath: config.remotePath,
+      localBasePath: this.fileService.baseDir,
     };
   },
   afterHandle() {
@@ -223,6 +226,7 @@ export const uploadFolder = createFileHandler<TransferOption>({
       ignore: config.ignore,
       backup: config.backup,
       remotePath: config.remotePath,
+      localBasePath: this.fileService.baseDir,
     };
   },
   afterHandle() {

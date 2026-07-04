@@ -1,10 +1,11 @@
 import * as vscode from 'vscode';
+import localFs from '../../core/localFs';
 import { getAllFileService } from '../serviceManager';
 
 export const BACKUP_SCHEME = 'sftp-backup';
 
-export function createBackupUri(fileServiceId: number, backupPath: string): vscode.Uri {
-  return vscode.Uri.parse(`${BACKUP_SCHEME}:${encodeURIComponent(backupPath)}?serviceId=${fileServiceId}`);
+export function createBackupUri(fileServiceId: number, backupPath: string, location: 'local' | 'remote' = 'remote'): vscode.Uri {
+  return vscode.Uri.parse(`${BACKUP_SCHEME}:${encodeURIComponent(backupPath)}?serviceId=${fileServiceId}&location=${location}`);
 }
 
 export class BackupContentProvider implements vscode.TextDocumentContentProvider {
@@ -15,6 +16,7 @@ export class BackupContentProvider implements vscode.TextDocumentContentProvider
     const params = new URLSearchParams(uri.query);
     const fileServiceId = parseInt(params.get('serviceId') || '', 10);
     const backupPath = decodeURIComponent(uri.path);
+    const location = (params.get('location') as 'local' | 'remote') || 'remote';
 
     const fileService = getAllFileService().find(service => service.id === fileServiceId);
     if (!fileService) {
@@ -22,8 +24,8 @@ export class BackupContentProvider implements vscode.TextDocumentContentProvider
     }
 
     const config = fileService.getConfig();
-    const remoteFs = await fileService.getRemoteFileSystem(config);
-    const content = await remoteFs.readFile(backupPath);
+    const backupFs = location === 'local' ? localFs : await fileService.getRemoteFileSystem(config);
+    const content = await backupFs.readFile(backupPath);
     return content.toString();
   }
 

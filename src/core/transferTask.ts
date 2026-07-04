@@ -1,10 +1,12 @@
 import { Readable } from 'stream';
+import * as path from 'path';
 import * as fileOperations from './fileBaseOperations';
 import { FileSystem, FileType } from './fs';
 import { Task } from './scheduler';
 import logger from '../logger';
 import { BackupConfig } from './fileService';
-import { createBackup } from './backup';
+import localFs from './localFs';
+import { createBackup, BackupStorage } from './backup';
 
 let hasWarnedModifedTimePermission = false;
 
@@ -30,6 +32,7 @@ export interface TransferOption {
   openSsh?: boolean;
   backup?: BackupConfig;
   remotePath?: string;
+  localBasePath?: string;
 }
 
 export default class TransferTask implements Task {
@@ -139,7 +142,18 @@ export default class TransferTask implements Task {
       this._TransferOption.backup.versions > 0 &&
       this._TransferOption.remotePath
     ) {
-      await createBackup(target, targetFs, this._TransferOption.backup, this._TransferOption.remotePath);
+      let storage: BackupStorage | undefined;
+      if (
+        this._TransferOption.backup.location === 'local' &&
+        this._TransferOption.localBasePath
+      ) {
+        storage = {
+          fs: localFs,
+          root: path.join(this._TransferOption.localBasePath, this._TransferOption.backup.folder),
+          pathResolver: path,
+        };
+      }
+      await createBackup(target, targetFs, this._TransferOption.backup, this._TransferOption.remotePath, storage);
     }
 
     // Set the mode if it's specified in the config, otherwise get mode from server.

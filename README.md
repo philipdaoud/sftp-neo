@@ -16,35 +16,41 @@
 
 ---
 
-## 🎉 What's New in v3.0.5
-
-### 🔕 "Don't Show Again" for Plaintext Password Warning
-If you choose to keep a password in `sftp.json`, the security warning now offers a **"Don't show again"** button. Your choice is saved in the global user setting `sftp.suppressPlaintextPasswordWarning`, so the warning stays suppressed across all workspaces.
-
-### 🖥️ Workspace-Scoped SSH Host Keys
-Multiple projects connecting to the same development server (same IP and port) — common with containers or multi-tenant setups — no longer trigger false **"SSH host key has CHANGED"** errors. Host keys are now stored per workspace, and existing `host:port` entries are migrated automatically when the key still matches.
-
----
-
-## 🎉 What's New in v3.0 — Remote File Backups
+## 🎉 What's New in v3.1 — Local or Remote File Backups
 
 <div align="center">
 
 ### 🛡️ Never Lose a File Again
 
-**Automatic versioned backups** on every upload & sync. Before any remote file is overwritten, SFTP Neo saves a copy on the server with a timestamp. Browse, restore, or delete old versions directly from VS Code.
+**Automatic versioned backups** on every upload & sync. Before any remote file is overwritten, SFTP Neo saves a timestamped copy — either on the server or in your local workspace. Browse, restore, or delete old versions directly from VS Code.
 
 </div>
 
 | | |
 |:---|:---|
-| 🔄 **Automatic Backups** | Every upload/sync creates a timestamped backup on the remote server |
+| 🔄 **Automatic Backups** | Every upload/sync creates a timestamped backup before overwriting the remote file |
+| 💻 **Local or Remote Storage** | Choose whether backups live on the server (`"location": "remote"`) or in your workspace (`"location": "local"`) |
 | 🎛️ **Configurable Retention** | Set how many versions to keep (`versions: 5`) — old ones auto-prune |
 | 📂 **Context-Aware Panel** | Click any file in Remote Explorer → see its backup history instantly |
 | 🔄 **One-Click Restore** | Right-click any backup to restore it to the live remote file |
 | 🔒 **Failsafe Design** | Backup failures never block your upload — your code always goes live |
 
-> ⚡ [**Jump to Backup Setup →**](#-remote-file-backups)
+> ⚡ [**Jump to Backup Setup →**](#-file-backups)
+
+---
+
+## 🎉 Previous Releases
+
+### v3.0.5
+
+#### 🔕 "Don't Show Again" for Plaintext Password Warning
+If you choose to keep a password in `sftp.json`, the security warning now offers a **"Don't show again"** button. Your choice is saved in the global user setting `sftp.suppressPlaintextPasswordWarning`, so the warning stays suppressed across all workspaces.
+
+#### 🖥️ Workspace-Scoped SSH Host Keys
+Multiple projects connecting to the same development server (same IP and port) — common with containers or multi-tenant setups — no longer trigger false **"SSH host key has CHANGED"** errors. Host keys are now stored per workspace, and existing `host:port` entries are migrated automatically when the key still matches.
+
+### v3.0 — Remote File Backups
+Introduced automatic versioned backups before every upload/sync, with a dedicated panel to browse, restore, and delete backup versions.
 
 ---
 
@@ -68,7 +74,7 @@ Multiple projects connecting to the same development server (same IP and port) �
 | 📂 **Multi-Context** | Sync different local folders to different servers |
 | 🔗 **SSH Hopping** | Jump through bastion hosts to reach internal servers |
 | 🖥️ **SSH Terminal** | Open an SSH connection straight from the sidebar |
-| 🛡️ **Remote Backups** | Automatic versioned backups before every upload with restore & prune |
+| 🛡️ **File Backups** | Automatic versioned backups before every upload with local or remote storage |
 | 🔕 **Password Warning Toggle** | "Don't show again" on the plaintext-password security warning |
 | 🖥️ **Per-Workspace Host Keys** | Independent SSH known-host entries per workspace for shared dev servers |
 
@@ -112,6 +118,7 @@ A `sftp.json` file is created under `.vscode`. Fill in your server details:
 | Upload current file | `SFTP: Upload Active File` |
 | Sync local → remote | `SFTP: Sync Local -> Remote` |
 | Browse remote | `View: Show SFTP` (sidebar) |
+| Manage backups | Select a file in Remote Explorer → **Backups** panel |
 
 Right-click any file or folder in the **Explorer** for quick upload / download / diff options.
 
@@ -216,7 +223,7 @@ Select multiple files with `Ctrl`/`Shift` to download or upload in batches.
 
 ---
 
-## 🛡️ Remote File Backups
+## 🛡️ File Backups
 
 <div align="center">
 
@@ -224,9 +231,11 @@ Select multiple files with `Ctrl`/`Shift` to download or upload in batches.
 
 </div>
 
-Before any remote file is overwritten by an upload or sync-to-remote operation, SFTP Neo automatically creates a timestamped backup copy on the server. Browse, restore, or delete backup versions without leaving VS Code.
+Before any remote file is overwritten by an upload or sync-to-remote operation, SFTP Neo automatically creates a timestamped backup copy. Choose to keep backups on the remote server or in your local workspace. Browse, restore, or delete backup versions without leaving VS Code.
 
 ### 🚀 How It Works
+
+#### Remote backups (`"location": "remote"`, default)
 
 ```
 Before Upload                    After Upload
@@ -235,6 +244,18 @@ remote/index.php                 remote/index.php  ← new content
                                  remote/.vsftp-backup/
                                    └─ index.php.20260612194215007.bak  ← old content
 ```
+
+#### Local backups (`"location": "local"`)
+
+```
+Before Upload                    After Upload
+─────────────────                ─────────────────
+remote/index.php                 remote/index.php  ← new content
+                                 workspace/.vsftp-backup/
+                                   └─ index.php.20260612194215007.bak  ← old content
+```
+
+The remote directory layout is preserved inside the backup folder so you can mirror the server structure locally.
 
 ### ⚙️ Configuration
 
@@ -251,6 +272,7 @@ Add the `backup` object to your `.vscode/sftp.json`:
   "uploadOnSave": true,
   "backup": {
     "enabled": true,
+    "location": "remote",
     "folder": ".vsftp-backup",
     "versions": 5
   }
@@ -260,17 +282,18 @@ Add the `backup` object to your `.vscode/sftp.json`:
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `backup.enabled` | `boolean` | `false` | Master switch. Set to `true` to enable backups. |
-| `backup.folder` | `string` | `".vscode/sftp-backup"` | Remote folder where backups are stored. Resolved relative to `remotePath`. |
+| `backup.location` | `string` | `"remote"` | Where backups are stored. `"remote"` keeps them on the server under `remotePath`; `"local"` keeps them in your workspace root. |
+| `backup.folder` | `string` | `".vscode/sftp-backup"` | Folder where backups are stored. Resolved relative to `remotePath` when `location` is `"remote"`, or relative to the workspace root when `location` is `"local"`. |
 | `backup.versions` | `number` | `5` | Maximum number of backup versions to keep per file. Set to `0` to disable backups even when `enabled` is `true`. |
 
 > 💡 **Tip:** The backup folder is automatically excluded from sync operations and the Remote Explorer — you never have to worry about backups being uploaded or cluttering your file tree.
 
-### 📂 Using the Remote Backups Panel
+### 📂 Using the Backups Panel
 
 1. **Enable backups** in your `sftp.json` (see configuration above).
 2. **Upload or sync** a file — a backup is created automatically before the overwrite.
 3. **Click any file** in the **Remote Explorer** panel.
-4. The **Remote Backups** panel updates to show all backup versions for that file, sorted newest → oldest.
+4. The **Backups** panel (titled **Remote Backups** or **Local Backups** based on your setting) updates to show all backup versions for that file, sorted newest → oldest.
 
 | Action | How |
 |--------|-----|
@@ -282,7 +305,7 @@ Add the `backup` object to your `.vscode/sftp.json`:
 
 - **Upload never blocked:** If a backup fails for any reason, the upload still proceeds. Your code always goes live.
 - **Auto-pruning:** Old backups beyond your `versions` limit are cleaned up automatically after each upload.
-- **No local clutter:** Backups live on the remote server, not your machine. The backup folder is invisible to sync.
+- **No sync loops:** The backup folder is invisible to sync, so local backups are never auto-uploaded and remote backups are never downloaded.
 - **Context-aware:** The panel only shows backups for the file you have selected in Remote Explorer.
 
 ---

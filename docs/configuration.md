@@ -131,13 +131,14 @@ Set to true for using default `limit(222)`. Do not set this unless you have to.
 **default**: false
 
 ## backup
-*object*: Configure remote file backups. Before a remote file is overwritten by an upload or sync-to-remote operation, a copy is stored on the server.
+*object*: Configure file backups. Before a remote file is overwritten by an upload or sync-to-remote operation, a copy is stored in the configured folder. The copy can be kept on the remote server or in the local workspace.
 
 **default**:
 ```json
 {
   "backup": {
     "enabled": false,
+    "location": "remote",
     "folder": ".vscode/sftp-backup",
     "versions": 5
   }
@@ -149,8 +150,15 @@ Set to true for using default `limit(222)`. Do not set this unless you have to.
 
 **default**: false
 
+## backup.location
+*enum*: Where to store backup copies.
+- `"remote"` - Keep backups on the server under `remotePath`.
+- `"local"` - Keep backups in the workspace root. The directory structure of the remote file is preserved inside the backup folder.
+
+**default**: `"remote"`
+
 ## backup.folder
-*string*: Remote folder where backups are stored. The path is resolved relative to `remotePath`. This folder is automatically excluded from sync and the Remote Explorer.
+*string*: Folder where backups are stored. Resolved relative to `remotePath` when `location` is `"remote"`, or relative to the workspace root when `location` is `"local"`. This folder is automatically excluded from sync and the Remote Explorer.
 
 **default**: `.vscode/sftp-backup`
 

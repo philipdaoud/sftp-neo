@@ -64,4 +64,54 @@ describe('backup during upload', () => {
     expect(backups.length).toBe(1);
     expect(vol.readFileSync(backups[0], 'utf8')).toBe('old remote content');
   });
+
+  test('upload creates backup locally when location is local', async () => {
+    vol.fromJSON({
+      '/workspace/index.php': 'new local content',
+      '/var/www/index.php': 'old remote content',
+    }, '/');
+
+    const localFs = localfs;
+    const remoteFs = createRemoteFs();
+
+    const task = new TransferTask(
+      { fsPath: '/workspace/index.php', fileSystem: localFs },
+      { fsPath: '/var/www/index.php', fileSystem: remoteFs },
+      {
+        fileType: FileType.File,
+        transferDirection: TransferDirection.LOCAL_TO_REMOTE,
+        transferOption: {
+          atime: Date.now(),
+          mtime: Date.now(),
+          perserveTargetMode: false,
+          backup: {
+            enabled: true,
+            location: 'local',
+            folder: '.vscode/sftp-backup',
+            versions: 5,
+          },
+          remotePath: '/var/www',
+          localBasePath: '/workspace',
+        },
+      }
+    );
+
+    try {
+      await task.run();
+    } catch (error) {
+      // The mock filesystem may throw on descriptor close, but the upload itself should complete.
+    }
+
+    // Target file should contain the new local content.
+    expect(vol.readFileSync('/var/www/index.php', 'utf8')).toBe('new local content');
+
+    // A backup should exist locally with the old remote content.
+    const backupDir = path.join('/workspace', '.vscode/sftp-backup');
+    const backups = Object.keys(vol.toJSON(backupDir)).filter(p => p.endsWith('.bak'));
+    expect(backups.length).toBe(1);
+    expect(vol.readFileSync(backups[0], 'utf8')).toBe('old remote content');
+
+    // No remote backup should have been created.
+    expect(vol.existsSync('/var/www/.vscode/sftp-backup')).toBe(false);
+  });
 });

@@ -73,6 +73,12 @@ export async function activate(context: vscode.ExtensionContext) {
       vscode.window.registerTreeDataProvider('remoteBackups', remoteBackupsProvider)
     );
 
+    const remoteBackupsView = vscode.window.createTreeView('remoteBackups', {
+      treeDataProvider: remoteBackupsProvider,
+    });
+    remoteBackupsProvider.setTreeView(remoteBackupsView);
+    context.subscriptions.push(remoteBackupsView);
+
     context.subscriptions.push(
       vscode.workspace.registerTextDocumentContentProvider(BACKUP_SCHEME, backupContentProvider)
     );

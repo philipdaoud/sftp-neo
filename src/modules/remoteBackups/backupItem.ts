@@ -8,6 +8,7 @@ export interface BackupVersion {
   originalPath: string;
   timestamp: Date;
   size?: number;
+  location: 'local' | 'remote';
 }
 
 export type BackupItem = BackupVersion;

@@ -189,6 +189,56 @@ describe("validation config", () => {
       expect(error).toBe(null);
     });
 
+    test("backup.location validation", () => {
+      const config = {
+        host: 'host',
+        port: 22,
+        username: 'username',
+        protocol: 'sftp',
+        passive: false,
+        interactiveAuth: false,
+
+        remotePath: '/',
+        uploadOnSave: false,
+
+        useTempFile: false,
+        openSsh: false,
+
+        syncMode: 'update',
+
+        watcher: {
+          files: false,
+          autoUpload: false,
+          autoDelete: false,
+        },
+
+        ignore: [
+          '**/.git',
+          '**/.DS_Store',
+        ],
+      };
+
+      let error = validateConfig(config);
+      expect(error).toBe(null);
+
+      config.backup = {
+        enabled: true,
+        location: 'local',
+        folder: '.vscode/sftp-backup',
+        versions: 5,
+      };
+      error = validateConfig(config);
+      expect(error).toBe(null);
+
+      config.backup.location = 'remote';
+      error = validateConfig(config);
+      expect(error).toBe(null);
+
+      config.backup.location = 'unknown';
+      error = validateConfig(config);
+      expect(error).not.toBe(null);
+    });
+
     test("passphrase validation", () => {
       const config = {
         host: 'host',

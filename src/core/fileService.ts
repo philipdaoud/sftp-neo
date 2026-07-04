@@ -68,6 +68,7 @@ interface WatcherConfig {
 
 export interface BackupConfig {
   enabled: boolean;
+  location?: 'local' | 'remote';
   folder: string;
   versions: number;
 }

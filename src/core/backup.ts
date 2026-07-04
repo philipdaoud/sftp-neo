@@ -1,4 +1,5 @@
 import upath from './upath';
+import * as path from 'path';
 import { FileSystem, FileType, FileEntry } from './fs';
 import { BackupConfig } from './fileService';
 import * as fileOperations from './fileBaseOperations';
@@ -9,40 +10,70 @@ export interface BackupPathInfo {
   timestamp: Date;
 }
 
-export function getBackupFolder(remotePath: string, backupFolder: string): string {
-  return upath.join(remotePath, backupFolder);
+export interface BackupStorage {
+  fs: FileSystem;
+  root: string;
+  pathResolver: typeof path | typeof upath;
 }
 
-export function getBackupDirForTarget(targetPath: string, backupFolder: string, remotePath: string): string {
-  const backupRoot = getBackupFolder(remotePath, backupFolder);
+export function getBackupFolder(
+  root: string,
+  backupFolder: string,
+  pathResolver: typeof path | typeof upath = upath
+): string {
+  return pathResolver.join(root, backupFolder);
+}
+
+export function getBackupDirForTarget(
+  targetPath: string,
+  backupFolder: string,
+  remotePath: string,
+  storageRoot?: string,
+  pathResolver: typeof path | typeof upath = upath
+): string {
+  const backupRoot = storageRoot ?? getBackupFolder(remotePath, backupFolder, pathResolver);
   const relativeDir = upath.dirname(upath.relative(remotePath, targetPath));
   if (relativeDir === '.' || relativeDir === '/') {
     return backupRoot;
   }
-  return upath.join(backupRoot, relativeDir);
+  // Preserve remote directory layout, but use the backup filesystem's separators.
+  const normalizedRelativeDir =
+    pathResolver === upath ? relativeDir : pathResolver.normalize(relativeDir);
+  return pathResolver.join(backupRoot, normalizedRelativeDir);
 }
 
 export function getBackupPath(
   targetPath: string,
   backupFolder: string,
   remotePath: string,
-  timestamp: Date = new Date()
+  timestamp: Date = new Date(),
+  storageRoot?: string,
+  pathResolver: typeof path | typeof upath = upath
 ): string {
-  const backupDir = getBackupDirForTarget(targetPath, backupFolder, remotePath);
+  const backupDir = getBackupDirForTarget(targetPath, backupFolder, remotePath, storageRoot, pathResolver);
   const filename = upath.basename(targetPath);
   const timestampStr = formatTimestamp(timestamp);
-  return upath.join(backupDir, `${filename}.${timestampStr}.bak`);
+  return pathResolver.join(backupDir, `${filename}.${timestampStr}.bak`);
 }
 
-export function parseBackupPath(backupPath: string, backupFolder: string, remotePath: string): BackupPathInfo | null {
-  const backupRoot = getBackupFolder(remotePath, backupFolder);
-  if (!backupPath.startsWith(backupRoot)) {
+export function parseBackupPath(
+  backupPath: string,
+  backupFolder: string,
+  remotePath: string,
+  storageRoot?: string,
+  pathResolver: typeof path | typeof upath = upath
+): BackupPathInfo | null {
+  const backupRoot = storageRoot ?? getBackupFolder(remotePath, backupFolder, pathResolver);
+
+  const normalizedBackupPath = pathResolver.normalize(backupPath);
+  const normalizedBackupRoot = pathResolver.normalize(backupRoot);
+  if (!normalizedBackupPath.startsWith(normalizedBackupRoot)) {
     return null;
   }
 
-  const relativeBackupPath = upath.relative(backupRoot, backupPath);
-  const basename = upath.basename(relativeBackupPath);
-  const dir = upath.dirname(relativeBackupPath);
+  const relativeBackupPath = pathResolver.relative(normalizedBackupRoot, normalizedBackupPath);
+  const basename = pathResolver.basename(relativeBackupPath);
+  const dir = pathResolver.dirname(relativeBackupPath);
 
   const match = basename.match(/^(.+)\.(\d{14,17})\.bak$/);
   if (!match) {
@@ -60,8 +91,12 @@ export function parseBackupPath(backupPath: string, backupFolder: string, remote
     originalRelativeDir = '';
   }
 
-  const originalPath = originalRelativeDir
-    ? upath.join(remotePath, originalRelativeDir, originalFilename)
+  // Remote original paths are always posix; local separators need translation.
+  const originalRelativeDirPosix =
+    pathResolver === upath ? originalRelativeDir : originalRelativeDir.replace(/\\/g, '/');
+
+  const originalPath = originalRelativeDirPosix
+    ? upath.join(remotePath, originalRelativeDirPosix, originalFilename)
     : upath.join(remotePath, originalFilename);
 
   return {
@@ -74,13 +109,15 @@ export async function createBackup(
   targetPath: string,
   targetFs: FileSystem,
   backupConfig: BackupConfig,
-  remotePath: string
+  remotePath: string,
+  storage?: BackupStorage
 ): Promise<string | null> {
   if (!backupConfig.enabled || backupConfig.versions <= 0) {
     return null;
   }
 
-  logger.info(`creating backup for ${targetPath} on remote ${remotePath}`);
+  const backupLocation = storage ? 'local' : 'remote';
+  logger.info(`creating backup for ${targetPath} on ${backupLocation}`);
 
   try {
     const stat = await targetFs.lstat(targetPath);
@@ -93,20 +130,25 @@ export async function createBackup(
     return null;
   }
 
-  let timestamp = new Date();
-  let backupPath = getBackupPath(targetPath, backupConfig.folder, remotePath, timestamp);
-  const backupDir = upath.dirname(backupPath);
+  const pathResolver = storage?.pathResolver ?? upath;
+  const backupFs = storage?.fs ?? targetFs;
+  const backupRoot = storage?.root ?? getBackupFolder(remotePath, backupConfig.folder, pathResolver);
 
-  while (await fileExists(targetFs, backupPath)) {
+  let timestamp = new Date();
+  let backupPath = getBackupPath(targetPath, backupConfig.folder, remotePath, timestamp, backupRoot, pathResolver);
+  const backupDir = pathResolver.dirname(backupPath);
+
+  while (await fileExists(backupFs, backupPath)) {
     timestamp = new Date(timestamp.getTime() + 1);
-    backupPath = getBackupPath(targetPath, backupConfig.folder, remotePath, timestamp);
+    backupPath = getBackupPath(targetPath, backupConfig.folder, remotePath, timestamp, backupRoot, pathResolver);
   }
 
   logger.info(`backup target path: ${backupPath}`);
 
   try {
-    await targetFs.ensureDir(backupDir);
-    await copyRemoteFile(targetFs, targetPath, backupPath);
+    await backupFs.ensureDir(backupDir);
+    const inputStream = await targetFs.get(targetPath);
+    await backupFs.put(inputStream, backupPath);
     logger.info(`backup created: ${targetPath} -> ${backupPath}`);
   } catch (error) {
     logger.warn(`failed to create backup for ${targetPath}: ${error.message}`);
@@ -114,7 +156,7 @@ export async function createBackup(
   }
 
   try {
-    await pruneBackups(targetPath, targetFs, backupConfig, remotePath);
+    await pruneBackups(targetPath, targetFs, backupConfig, remotePath, storage);
   } catch (error) {
     logger.warn(`failed to prune backups for ${targetPath}: ${error.message}`);
   }
@@ -122,23 +164,23 @@ export async function createBackup(
   return backupPath;
 }
 
-async function copyRemoteFile(srcFs: FileSystem, srcPath: string, destPath: string): Promise<void> {
-  const inputStream = await srcFs.get(srcPath);
-  await srcFs.put(inputStream, destPath);
-}
-
 export async function pruneBackups(
   targetPath: string,
   targetFs: FileSystem,
   backupConfig: BackupConfig,
-  remotePath: string
+  remotePath: string,
+  storage?: BackupStorage
 ): Promise<void> {
   if (!backupConfig.enabled || backupConfig.versions <= 0) {
     logger.info(`prune skipped for ${targetPath}: enabled=${backupConfig.enabled}, versions=${backupConfig.versions}`);
     return;
   }
 
-  const backupDir = getBackupDirForTarget(targetPath, backupConfig.folder, remotePath);
+  const pathResolver = storage?.pathResolver ?? upath;
+  const backupFs = storage?.fs ?? targetFs;
+  const backupRoot = storage?.root ?? getBackupFolder(remotePath, backupConfig.folder, pathResolver);
+
+  const backupDir = getBackupDirForTarget(targetPath, backupConfig.folder, remotePath, backupRoot, pathResolver);
   const filename = upath.basename(targetPath);
   const backupPrefix = `${filename}.`;
   const backupSuffix = '.bak';
@@ -147,7 +189,7 @@ export async function pruneBackups(
 
   let entries: FileEntry[];
   try {
-    entries = await targetFs.list(backupDir);
+    entries = await backupFs.list(backupDir);
     logger.info(`found ${entries.length} entries in backup dir`);
   } catch (error) {
     logger.warn(`failed to list backup dir ${backupDir}: ${error.message}`);
@@ -176,7 +218,7 @@ export async function pruneBackups(
 
   for (const item of toDelete) {
     try {
-      await fileOperations.removeFile(item.entry.fspath, targetFs, undefined);
+      await fileOperations.removeFile(item.entry.fspath, backupFs, undefined);
       logger.info(`pruned old backup: ${item.entry.fspath}`);
     } catch (error) {
       logger.warn(`failed to prune backup ${item.entry.fspath}: ${error.message}`);

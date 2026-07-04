@@ -98,16 +98,21 @@
       },
       "backup": {
         "type": "object",
-        "description": "Remote file backup settings. Before a remote file is overwritten by an upload or sync, a copy is stored in the configured folder.",
+        "description": "File backup settings. Before a remote file is overwritten by an upload or sync-to-remote operation, a copy is stored in the configured folder. The copy can be kept on the remote server or in the local workspace.",
         "properties": {
           "enabled": {
             "type": "boolean",
             "description": "Whether to keep backups of overwritten remote files.",
             "default": false
           },
+          "location": {
+            "enum": ["remote", "local"],
+            "description": "Where to store backup copies. 'remote' keeps them on the server under remotePath; 'local' keeps them in the workspace root.",
+            "default": "remote"
+          },
           "folder": {
             "type": "string",
-            "description": "Remote folder where backups are stored. Resolved relative to remotePath.",
+            "description": "Folder where backups are stored. Resolved relative to remotePath when location is 'remote', or relative to the workspace root when location is 'local'. This folder is automatically excluded from sync and the Remote Explorer.",
             "default": ".vscode/sftp-backup"
           },
           "versions": {
@@ -119,6 +124,7 @@
         },
         "default": {
           "enabled": false,
+          "location": "remote",
           "folder": ".vscode/sftp-backup",
           "versions": 5
         }

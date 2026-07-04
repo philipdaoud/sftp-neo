@@ -54,6 +54,7 @@ const configScheme = z.object({
   }).optional(),
   backup: z.object({
     enabled: z.boolean().optional(),
+    location: z.enum(['local', 'remote']).optional(),
     folder: z.string().optional(),
     versions: z.number().int().min(0).optional(),
   }).optional(),
@@ -127,6 +128,7 @@ const defaultConfig = {
 
   backup: {
     enabled: false,
+    location: 'remote',
     folder: '.vscode/sftp-backup',
     versions: 5,
   },
