@@ -63,6 +63,7 @@ export async function activate(context: vscode.ExtensionContext) {
   });
   try {
     await setup(workspaceFolders);
+    setContextValue('hasConfig', getAllFileService().length > 0);
     app.remoteExplorer = new RemoteExplorer(context);
 
     context.subscriptions.push(

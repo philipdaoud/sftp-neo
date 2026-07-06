@@ -6,8 +6,8 @@
 
 🔒 **More Secure** · 📦 **Updated Libraries** · ⭐ **More Features**
 
-[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/philipdaoud.sftp-neo?style=flat-square&label=Marketplace&color=007ACC&logo=visualstudiocode)](https://marketplace.visualstudio.com/items?itemName=philipdaoud.sftp-neo)
-[![GitHub Repo](https://img.shields.io/github/v/release/philipdaoud/sftp-neo?style=flat-square&label=VSIX&color=181717&logo=github)](https://github.com/philipdaoud/sftp-neo)
+[![VS Code Marketplace](https://vsmarketplacebadges.dev/version/philipdaoud.sftp-neo.svg?style=flat-square&label=Marketplace&color=007ACC&logo=visualstudiocode)](https://marketplace.visualstudio.com/items?itemName=philipdaoud.sftp-neo)
+[![GitHub Repo](https://img.shields.io/badge/Releases-GitHub-181717?style=flat-square&logo=github)](https://github.com/philipdaoud/sftp-neo/releases)
 [![License](https://img.shields.io/github/license/philipdaoud/sftp-neo?style=flat-square&color=green)](./LICENSE)
 
 </div>
@@ -16,7 +16,7 @@
 
 ---
 
-## 🎉 What's New in v3.1 — Local or Remote File Backups
+## 🎉 What's New in v3.1.0 — Local or Remote File Backups
 
 <div align="center">
 
@@ -88,7 +88,7 @@ Grab it from the [VS Code Marketplace](https://marketplace.visualstudio.com/item
 
 ### 2. Configure
 
-Open the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) and run:
+Open the SFTP sidebar from the activity bar. If no config exists yet, click **"Create SFTP Config"** in the welcome view. You can also open the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) and run:
 
 ```
 SFTP: Config
@@ -104,11 +104,18 @@ A `sftp.json` file is created under `.vscode`. Fill in your server details:
   "port": 22,
   "username": "root",
   "remotePath": "/var/www/html",
-  "uploadOnSave": true
+  "uploadOnSave": true,
+  "backup": {
+    "enabled": false,
+    "location": "remote",
+    "folder": ".vscode/sftp-backup",
+    "versions": 5
+  }
 }
 ```
 
-> 💡 **No password?** Leave `"password"` out (or set it to `null`) — you'll be prompted once and can save it securely to your OS keychain. See [🔐 Security](#-security).
+> 💡 **No password?** Leave `"password"` out (or set it to `null`) — you'll be prompted once and can save it securely to your OS keychain. See [🔐 Security](#-security).  
+> 🛡️ **Backups** are disabled by default. Set `"backup.enabled": true` to keep timestamped versions of remote files before every upload/sync. See [🛡️ File Backups](#-file-backups).
 
 ### 3. Go!
 

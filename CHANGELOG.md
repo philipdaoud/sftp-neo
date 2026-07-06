@@ -1,3 +1,6 @@
+## 3.1.1 - 2026-07-06
+* **Fix:** When the extension is installed but no `.vscode/sftp.json` exists, the SFTP activity bar icon now correctly shows an empty-state welcome card with a **"Create SFTP Config"** button. Previously the card was gated on `sftp.enabled`, which is set as soon as a workspace opens, so the onboarding message never appeared.
+
 ## 3.1.0 - 2026-07-04
 * **Major Feature — Local or Remote File Backups:**
   * 💻 **Choose backup storage location** via new `backup.location` option in `sftp.json`. Set to `"remote"` (default) to keep backups on the server under `remotePath`, or `"local"` to store them in the workspace root while preserving the remote directory layout.

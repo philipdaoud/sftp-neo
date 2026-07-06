@@ -2,7 +2,7 @@
   "name": "sftp-neo",
   "displayName": "SFTP Neo",
   "description": "SFTP/FTP sync",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "publisher": "PhilipDaoud",
   "author": "Philip Daoud <philipdaoud@gmail.com> (https://github.com/PhilipDaoud)",
   "engines": {
@@ -62,7 +62,7 @@
       {
         "view": "remoteExplorer",
         "contents": "No SFTP configuration found in this workspace.\n[Create SFTP Config](command:sftp.config)",
-        "when": "!sftp.enabled"
+        "when": "!sftp.hasConfig"
       },
       {
         "view": "transferQueue",

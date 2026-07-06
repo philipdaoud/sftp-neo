@@ -208,6 +208,12 @@ export function newConfig(basePath) {
             uploadOnSave: false,
             useTempFile: false,
             openSsh: false,
+            backup: {
+              enabled: false,
+              location: 'remote',
+              folder: '.vscode/sftp-backup',
+              versions: 5,
+            },
           },
           { spaces: 4 }
         )
