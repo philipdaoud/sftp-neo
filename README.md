@@ -6,7 +6,7 @@
 
 🔒 **More Secure** · 📦 **Updated Libraries** · ⭐ **More Features**
 
-[![VS Code Marketplace](https://vsmarketplacebadges.dev/version/philipdaoud.sftp-neo.svg?style=flat-square&label=Marketplace&color=007ACC&logo=visualstudiocode)](https://marketplace.visualstudio.com/items?itemName=philipdaoud.sftp-neo)
+[![VS Code Marketplace](https://vsmarketplacebadges.dev/version/philipdaoud.sftp-neo.png?style=flat-square&label=Marketplace&color=007ACC&logo=visualstudiocode)](https://marketplace.visualstudio.com/items?itemName=philipdaoud.sftp-neo)
 [![Open VSX](https://img.shields.io/badge/Open%20VSX-PhilipDaoud.sftp--neo-45B39D?style=flat-square&logo=eclipseide)](https://open-vsx.org/extension/PhilipDaoud/sftp-neo)
 [![GitHub Repo](https://img.shields.io/badge/Releases-GitHub-181717?style=flat-square&logo=github)](https://github.com/philipdaoud/sftp-neo/releases)
 [![License](https://img.shields.io/github/license/philipdaoud/sftp-neo?style=flat-square&color=green)](./LICENSE)
@@ -17,7 +17,31 @@
 
 ---
 
-## 🎉 What's New in v3.1.0 — Local or Remote File Backups
+## 🎉 What's New in v3.2.0 — Remote Explorer Filter
+
+<div align="center">
+
+### 🔍 Find Remote Files Instantly
+
+Quickly filter the Remote Explorer sidebar as you type. No more scrolling through hundreds of remote files — just click the filter icon, start typing, and only matching files and folders stay visible.
+
+</div>
+
+| | |
+|:---|:---|
+| 🔍 **Live Filter** | Type in the filter box and the Remote Explorer updates instantly |
+| 🖥️ **Client-Side Only** | Filters only the files and folders already shown in the sidebar — no extra server requests |
+| 📂 **Smart Folders** | Parent folders stay visible when a child file or folder matches, so you don't lose your place |
+| ✖️ **One-Click Clear** | An X button appears in the title bar as soon as a filter is active |
+| 🏷️ **Always Visible** | The current filter is shown in the Remote Explorer header |
+
+> ⚡ [**Jump to Remote Explorer Filter Docs →**](./docs/commands.md#remote-explorer-filter)
+
+---
+
+## 🎉 Previous Releases
+
+### v3.1.0 — Local or Remote File Backups
 
 <div align="center">
 
@@ -36,12 +60,6 @@
 | 🔄 **One-Click Restore** | Right-click any backup to restore it to the live remote file |
 | 🔒 **Failsafe Design** | Backup failures never block your upload — your code always goes live |
 
-> ⚡ [**Jump to Backup Setup →**](#-file-backups)
-
----
-
-## 🎉 Previous Releases
-
 ### v3.0.5
 
 #### 🔕 "Don't Show Again" for Plaintext Password Warning
@@ -57,7 +75,7 @@ Introduced automatic versioned backups before every upload/sync, with a dedicate
 
 ## 📑 Quick Links
 
-[✨ Features](#-features) · [⚡ Quick Start](#-quick-start) · [🔧 Config Examples](#-config-examples) · [🔐 Security](#-security) · [🐛 Debug](#-debug) · [❓ FAQ](./FAQ.md)
+[✨ Features](#-features) · [⚡ Quick Start](#-quick-start) · [🔧 Config Examples](#-config-examples) · [🔐 Security](#-security) · [🔑 SSH Authentication](#-ssh-authentication) · [🐛 Debug](#-debug) · [❓ FAQ](./FAQ.md)
 
 ---
 
@@ -66,6 +84,7 @@ Introduced automatic versioned backups before every upload/sync, with a dedicate
 | Feature | Description |
 |---------|-------------|
 | 🌐 **Remote Explorer** | Browse & manage remote files like a local filesystem |
+| 🔍 **Remote Explorer Filter** | Live client-side filter for files and folders already shown in the sidebar |
 | ⬆️⬇️ **Upload / Download** | Single files, folders, or entire projects |
 | 🔄 **Sync** | Bi-directional or one-way directory sync |
 | 💾 **Upload on Save** | Auto-push changes as you code |
@@ -214,6 +233,105 @@ SFTP Neo stores passwords & passphrases in your **OS credential store** (macOS K
 The same works for private key `passphrase`.
 
 > 🧹 Manage saved credentials anytime with `SFTP: Delete Saved Password`.
+
+---
+
+## 🔑 SSH Authentication
+
+SFTP Neo supports three ways to authenticate SFTP connections. For both security and convenience, **SSH keys** or **ssh-agent** are recommended over plaintext passwords.
+
+| Method | Best for | Stored in `sftp.json` | Works with **Open SSH in Terminal** |
+|--------|----------|----------------------|-------------------------------------|
+| `privateKeyPath` | Single key file, no agent running | Path only (never the key contents) | ✅ Yes, with `-i /path/to/key` |
+| `agent` | Shared workstation, multiple keys, or fully password-less login | No secrets | ✅ Yes — the most seamless option |
+| `password` / `passphrase` | Servers that require it | `null` + Secret Storage (recommended) | ❌ No auto-fill in terminal |
+
+### SSH private key (`privateKeyPath`)
+
+1. **Generate a key pair** (skip if you already have one):
+   ```bash
+   ssh-keygen -t ed25519 -C "you@example.com"
+   ```
+   Press Enter to accept the default location (`~/.ssh/id_ed25519`). You can set a passphrase for extra security.
+
+2. **Copy the public key to your server**:
+   ```bash
+   ssh-copy-id -i ~/.ssh/id_ed25519.pub user@example.com
+   ```
+
+3. **Configure SFTP Neo**:
+   ```json
+   {
+     "name": "My Server",
+     "host": "example.com",
+     "protocol": "sftp",
+     "port": 22,
+     "username": "user",
+     "privateKeyPath": "~/.ssh/id_ed25519",
+     "remotePath": "/var/www/html",
+     "uploadOnSave": true
+   }
+   ```
+
+> 💡 **Encrypted key?** Set `"passphrase": true` and SFTP Neo will prompt once, then offer to save it to Secret Storage. Or load the key into ssh-agent (see below) and omit `passphrase`.
+
+### SSH agent (`agent`)
+
+Using an ssh-agent is the most convenient option: your key is unlocked once per session, and both SFTP transfers and **Open SSH in Terminal** work without typing a password.
+
+#### macOS / Linux
+
+1. **Start the agent and add your key**:
+   ```bash
+   eval "$(ssh-agent -s)"
+   ssh-add ~/.ssh/id_ed25519
+   ```
+
+2. **Get the agent socket**:
+   ```bash
+   echo $SSH_AUTH_SOCK
+   # Example: /tmp/ssh-XXXXXX/agent.12345
+   ```
+
+3. **Configure SFTP Neo**:
+   ```json
+   {
+     "host": "example.com",
+     "username": "user",
+     "agent": "/tmp/ssh-XXXXXX/agent.12345",
+     "remotePath": "/var/www/html"
+   }
+   ```
+
+> 🍎 On macOS, if your key is stored in Keychain, use `ssh-add --apple-use-keychain ~/.ssh/id_ed25519` so you are not prompted after every reboot.
+
+#### Windows
+
+- **Pageant** (PuTTY agent): set `"agent": "pageant"`.
+- **Windows OpenSSH agent**: make sure the `OpenSSH Authentication Agent` service is running, then set `"agent": "\\\\.\\pipe\\openssh-ssh-agent"` (the pipe name may differ on older Windows builds).
+
+### Platform-specific tips
+
+| Platform | Tip |
+|----------|-----|
+| **macOS** | `ssh-add --apple-use-keychain ~/.ssh/id_ed25519` persists the unlocked key across reboots. |
+| **Linux** | `ssh-agent` exits when the shell closes. Use your distro’s user service or add the `eval`/`ssh-add` commands to your shell profile to keep it available. |
+| **Windows** | For WSL, use the Linux instructions inside WSL. For native Windows, the OpenSSH agent pipe or Pageant are the usual choices. |
+
+### A note on **Open SSH in Terminal**
+
+The sidebar command builds a plain terminal command:
+
+```bash
+ssh -t user@host -p 22 -i "/path/to/key"
+```
+
+It can automatically use:
+
+- your `privateKeyPath` (`-i ...`)
+- your ssh-agent (no extra flags)
+
+It **cannot** auto-type a password or passphrase into the terminal. If you want a fully password-less terminal experience, use an ssh-agent.
 
 ---
 
