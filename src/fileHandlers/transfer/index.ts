@@ -3,13 +3,14 @@ import createFileHandler, { FileHandlerContext } from '../createFileHandler';
 import { transfer, sync, TransferOption, SyncOption, TransferDirection } from './transfer';
 import { runHook } from '../../modules/hooks';
 import { remoteBackupsProvider } from '../../modules/remoteBackups';
+import { isConnectionError, withRetry } from '../../helper';
+
+const TRANSFER_RETRY_ATTEMPTS = 2;
 
 function createTransferHandle(direction: TransferDirection) {
   return async function handle(this: FileHandlerContext, option) {
-    const remoteFs = await this.fileService.getRemoteFileSystem(this.config);
     const localFs = this.fileService.getLocalFileSystem();
     const { localFsPath, remoteFsPath } = this.target;
-    const scheduler = this.fileService.createTransferScheduler(this.config.concurrency);
     const hooks = this.config.hooks;
     const hookCtx = {
       localPath: localFsPath,
@@ -25,35 +26,46 @@ function createTransferHandle(direction: TransferDirection) {
 
     await runHook(preHook, hooks, hookCtx, workspacePath);
 
-    let transferConfig;
-    if (direction === TransferDirection.REMOTE_TO_LOCAL) {
-      transferConfig = {
-        srcFsPath: remoteFsPath,
-        srcFs: remoteFs,
-        targetFsPath: localFsPath,
-        targetFs: localFs,
-        transferOption: option,
-        transferDirection: TransferDirection.REMOTE_TO_LOCAL,
-      };
-    } else {
-      transferConfig = {
-        srcFsPath: localFsPath,
-        srcFs: localFs,
-        targetFsPath: remoteFsPath,
-        targetFs: remoteFs,
-        transferOption: option,
-        filePerm: this.config.filePerm,
-        dirPerm: this.config.dirPerm,
-        transferDirection: TransferDirection.LOCAL_TO_REMOTE,
-      };
-    }
-    // todo: abort at here. we should stop collect task
-    await transfer(transferConfig, t => scheduler.add(t));
-    await scheduler.run();
+    await withRetry(
+      async () => {
+        const remoteFs = await this.fileService.getRemoteFileSystem(this.config);
+        const scheduler = this.fileService.createTransferScheduler(this.config.concurrency);
+        let transferConfig;
+        if (direction === TransferDirection.REMOTE_TO_LOCAL) {
+          transferConfig = {
+            srcFsPath: remoteFsPath,
+            srcFs: remoteFs,
+            targetFsPath: localFsPath,
+            targetFs: localFs,
+            transferOption: option,
+            transferDirection: TransferDirection.REMOTE_TO_LOCAL,
+          };
+        } else {
+          transferConfig = {
+            srcFsPath: localFsPath,
+            srcFs: localFs,
+            targetFsPath: remoteFsPath,
+            targetFs: remoteFs,
+            transferOption: option,
+            filePerm: this.config.filePerm,
+            dirPerm: this.config.dirPerm,
+            transferDirection: TransferDirection.LOCAL_TO_REMOTE,
+          };
+        }
+        // todo: abort at here. we should stop collect task
+        await transfer(transferConfig, t => scheduler.add(t));
+        await scheduler.run();
 
-    if (isUpload) {
-      remoteBackupsProvider.refresh();
-    }
+        if (isUpload) {
+          remoteBackupsProvider.refresh();
+        }
+      },
+      {
+        maxAttempts: TRANSFER_RETRY_ATTEMPTS,
+        shouldRetry: isConnectionError,
+        onRetry: () => this.fileService.clearRemoteFileSystem(this.config),
+      }
+    );
 
     await runHook(postHook, hooks, hookCtx, workspacePath);
   };
@@ -65,10 +77,8 @@ const downloadHandle = createTransferHandle(TransferDirection.REMOTE_TO_LOCAL);
 export const sync2Remote = createFileHandler<SyncOption>({
   name: 'sync local ➞ remote',
   async handle(option) {
-    const remoteFs = await this.fileService.getRemoteFileSystem(this.config);
     const localFs = this.fileService.getLocalFileSystem();
     const { localFsPath, remoteFsPath } = this.target;
-    const scheduler = this.fileService.createTransferScheduler(this.config.concurrency);
     const hooks = this.config.hooks;
     const hookCtx = {
       localPath: localFsPath,
@@ -83,20 +93,32 @@ export const sync2Remote = createFileHandler<SyncOption>({
     // Attach filePerm and dirPerm to transferOption
     option.filePerm = this.config.filePerm;
     option.dirPerm = this.config.dirPerm;
-    await sync(
-      {
-        srcFsPath: localFsPath,
-        srcFs: localFs,
-        targetFsPath: remoteFsPath,
-        targetFs: remoteFs,
-        transferOption: option,
-        transferDirection: TransferDirection.LOCAL_TO_REMOTE,
-      },
-      t => scheduler.add(t)
-    );
-    await scheduler.run();
 
-    remoteBackupsProvider.refresh();
+    await withRetry(
+      async () => {
+        const remoteFs = await this.fileService.getRemoteFileSystem(this.config);
+        const scheduler = this.fileService.createTransferScheduler(this.config.concurrency);
+        await sync(
+          {
+            srcFsPath: localFsPath,
+            srcFs: localFs,
+            targetFsPath: remoteFsPath,
+            targetFs: remoteFs,
+            transferOption: option,
+            transferDirection: TransferDirection.LOCAL_TO_REMOTE,
+          },
+          t => scheduler.add(t)
+        );
+        await scheduler.run();
+
+        remoteBackupsProvider.refresh();
+      },
+      {
+        maxAttempts: TRANSFER_RETRY_ATTEMPTS,
+        shouldRetry: isConnectionError,
+        onRetry: () => this.fileService.clearRemoteFileSystem(this.config),
+      }
+    );
 
     await runHook('postSync', hooks, hookCtx, workspacePath);
   },
@@ -126,10 +148,8 @@ export const sync2Remote = createFileHandler<SyncOption>({
 export const sync2Local = createFileHandler<SyncOption>({
   name: 'sync remote ➞ local',
   async handle(option) {
-    const remoteFs = await this.fileService.getRemoteFileSystem(this.config);
     const localFs = this.fileService.getLocalFileSystem();
     const { localFsPath, remoteFsPath } = this.target;
-    const scheduler = this.fileService.createTransferScheduler(this.config.concurrency);
     const hooks = this.config.hooks;
     const hookCtx = {
       localPath: localFsPath,
@@ -141,18 +161,29 @@ export const sync2Local = createFileHandler<SyncOption>({
 
     await runHook('preSync', hooks, hookCtx, workspacePath);
 
-    await sync(
-      {
-        srcFsPath: remoteFsPath,
-        srcFs: remoteFs,
-        targetFsPath: localFsPath,
-        targetFs: localFs,
-        transferOption: option,
-        transferDirection: TransferDirection.REMOTE_TO_LOCAL,
+    await withRetry(
+      async () => {
+        const remoteFs = await this.fileService.getRemoteFileSystem(this.config);
+        const scheduler = this.fileService.createTransferScheduler(this.config.concurrency);
+        await sync(
+          {
+            srcFsPath: remoteFsPath,
+            srcFs: remoteFs,
+            targetFsPath: localFsPath,
+            targetFs: localFs,
+            transferOption: option,
+            transferDirection: TransferDirection.REMOTE_TO_LOCAL,
+          },
+          t => scheduler.add(t)
+        );
+        await scheduler.run();
       },
-      t => scheduler.add(t)
+      {
+        maxAttempts: TRANSFER_RETRY_ATTEMPTS,
+        shouldRetry: isConnectionError,
+        onRetry: () => this.fileService.clearRemoteFileSystem(this.config),
+      }
     );
-    await scheduler.run();
 
     await runHook('postSync', hooks, hookCtx, workspacePath);
   },

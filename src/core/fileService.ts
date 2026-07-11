@@ -622,6 +622,10 @@ export default class FileService {
     return createRemoteIfNoneExist(hostInfo);
   }
 
+  clearRemoteFileSystem(config: ServiceConfig): void {
+    removeRemoteFs(getHostInfo(config));
+  }
+
   getConfig(useProfile = app.state.profile): ServiceConfig {
     let config = this._config;
     const hasProfile =

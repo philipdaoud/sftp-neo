@@ -1,5 +1,13 @@
-## 3.1.1 - 2026-07-06
+## 3.2.0 - 2026-07-08
+* **Feature — Remote Explorer Filter:**
+  * Quickly filter files and folders directly in the Remote Explorer sidebar. Click the filter icon in the Remote Explorer title bar, type a query, and the tree updates live as you type.
+  * The filter is purely client-side and applies only to files and folders already loaded in the Remote Explorer. It does **not** fetch new data from the server.
+  * Folders stay visible if they contain matching files or folders, so searching for a deep file keeps its parent path visible.
+  * The active filter is shown in the Remote Explorer header description, and a clear (X) button appears in the title bar when a filter is active.
+
+## 3.1.1 - 2026-07-08
 * **Fix:** When the extension is installed but no `.vscode/sftp.json` exists, the SFTP activity bar icon now correctly shows an empty-state welcome card with a **"Create SFTP Config"** button. Previously the card was gated on `sftp.enabled`, which is set as soon as a workspace opens, so the onboarding message never appeared.
+* **Fix:** Upload, download, and sync operations now automatically reconnect and retry once when the server closes the connection (`ECONNRESET`, FIN, "Connection closed", etc.). Previously the cached dead connection was reused, causing repeated timeouts and forcing users to retry manually.
 
 ## 3.1.0 - 2026-07-04
 * **Major Feature — Local or Remote File Backups:**

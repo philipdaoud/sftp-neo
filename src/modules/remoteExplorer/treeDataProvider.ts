@@ -68,6 +68,7 @@ export default class RemoteTreeData
   private _roots: ExplorerRoot[] | null;
   private _rootsMap: Map<Id, ExplorerRoot> | null;
   private _map: Map<vscode.Uri['query'], ExplorerItem>;
+  private _filterQuery: string = '';
 
   private _onDidChangeFolder: vscode.EventEmitter<ExplorerItem | undefined> = new vscode.EventEmitter<
     ExplorerItem | undefined
@@ -104,6 +105,53 @@ export default class RemoteTreeData
     }
   }
 
+  setFilter(query: string): void {
+    this._filterQuery = query.toLowerCase().trim();
+    this._onDidChangeFolder.fire(undefined);
+  }
+
+  getFilter(): string {
+    return this._filterQuery;
+  }
+
+  private _matchesFilter(item: ExplorerItem): boolean {
+    if (!this._filterQuery) {
+      return true;
+    }
+
+    const name = upath.basename(item.resource.fsPath).toLowerCase();
+    return name.includes(this._filterQuery);
+  }
+
+  private _isDescendant(folder: ExplorerItem, item: ExplorerItem): boolean {
+    if (item === folder) {
+      return false;
+    }
+
+    const folderRoot = this.findRoot(folder.resource.uri);
+    const itemRoot = this.findRoot(item.resource.uri);
+    if (!folderRoot || !itemRoot || folderRoot !== itemRoot) {
+      return false;
+    }
+
+    const relative = upath.relative(folder.resource.fsPath, item.resource.fsPath);
+    return Boolean(relative && !relative.startsWith('..') && !upath.isAbsolute(relative));
+  }
+
+  private _hasMatchingDescendant(folder: ExplorerItem): boolean {
+    if (!folder.isDirectory) {
+      return false;
+    }
+
+    for (const item of this._map.values()) {
+      if (this._isDescendant(folder, item) && this._matchesFilter(item)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   getTreeItem(item: ExplorerItem): vscode.TreeItem {
     const isRoot = (item as ExplorerRoot).explorerContext !== undefined;
     let customLabel;
@@ -131,60 +179,70 @@ export default class RemoteTreeData
   }
 
   async getChildren(item?: ExplorerItem): Promise<ExplorerItem[]> {
+    let items: ExplorerItem[];
+
     if (!item) {
-      return this._getRoots();
-    }
-
-    const root = this.findRoot(item.resource.uri);
-    if (!root) {
-      throw new Error(`Can't find config for remote resource ${item.resource.uri}.`);
-    }
-    const config = root.explorerContext.config;
-    const remotefs = await root.explorerContext.fileService.getRemoteFileSystem(config);
-    const fileEntries = await remotefs.list(item.resource.fsPath);
-
-    const filesExcludeList: string[] =
-      config.remoteExplorer && config.remoteExplorer.filesExclude
-        ? config.remoteExplorer.filesExclude.concat(DEFAULT_FILES_EXCLUDE)
-        : DEFAULT_FILES_EXCLUDE.slice();
-
-    if (config.backup && config.backup.enabled && config.backup.versions > 0 && config.backup.folder) {
-      const backupPattern = config.backup.folder.endsWith('/')
-        ? `${config.backup.folder}**`
-        : `${config.backup.folder}/**`;
-      if (filesExcludeList.indexOf(backupPattern) === -1) {
-        filesExcludeList.push(backupPattern);
+      items = this._getRoots();
+    } else {
+      const root = this.findRoot(item.resource.uri);
+      if (!root) {
+        throw new Error(`Can't find config for remote resource ${item.resource.uri}.`);
       }
-    }
+      const config = root.explorerContext.config;
+      const remotefs = await root.explorerContext.fileService.getRemoteFileSystem(config);
+      const fileEntries = await remotefs.list(item.resource.fsPath);
 
-    const ignore = new Ignore(filesExcludeList);
-    function filterFile(file: FileEntry) {
-      const relativePath = upath.relative(config.remotePath, file.fspath);
-      return !ignore.ignores(relativePath);
-    }
+      const filesExcludeList: string[] =
+        config.remoteExplorer && config.remoteExplorer.filesExclude
+          ? config.remoteExplorer.filesExclude.concat(DEFAULT_FILES_EXCLUDE)
+          : DEFAULT_FILES_EXCLUDE.slice();
 
-    return fileEntries
-      .filter(filterFile)
-      .map(file => {
-        const isDirectory = file.type === FileType.Directory;
-        const newResource = UResource.updateResource(item.resource, {
-          remotePath: file.fspath,
-        });
-        const mapItem = this._map.get(newResource.uri.query);
-        if (mapItem) {
-          return mapItem;
-        } else {
-          const newItem = {
-            resource: UResource.updateResource(item.resource, {
-              remotePath: file.fspath,
-            }),
-            isDirectory,
-          };
-          this._map.set(newItem.resource.uri.query, newItem);
-          return newItem;
+      if (config.backup && config.backup.enabled && config.backup.versions > 0 && config.backup.folder) {
+        const backupPattern = config.backup.folder.endsWith('/')
+          ? `${config.backup.folder}**`
+          : `${config.backup.folder}/**`;
+        if (filesExcludeList.indexOf(backupPattern) === -1) {
+          filesExcludeList.push(backupPattern);
         }
-      })
-      .sort(dirFirstSort);
+      }
+
+      const ignore = new Ignore(filesExcludeList);
+      function filterFile(file: FileEntry) {
+        const relativePath = upath.relative(config.remotePath, file.fspath);
+        return !ignore.ignores(relativePath);
+      }
+
+      items = fileEntries
+        .filter(filterFile)
+        .map(file => {
+          const isDirectory = file.type === FileType.Directory;
+          const newResource = UResource.updateResource(item.resource, {
+            remotePath: file.fspath,
+          });
+          const mapItem = this._map.get(newResource.uri.query);
+          if (mapItem) {
+            return mapItem;
+          } else {
+            const newItem = {
+              resource: UResource.updateResource(item.resource, {
+                remotePath: file.fspath,
+              }),
+              isDirectory,
+            };
+            this._map.set(newItem.resource.uri.query, newItem);
+            return newItem;
+          }
+        })
+        .sort(dirFirstSort);
+    }
+
+    if (!this._filterQuery || !item) {
+      return items;
+    }
+
+    return items.filter(
+      i => this._matchesFilter(i) || (i.isDirectory && this._hasMatchingDescendant(i))
+    );
   }
 
   async getParent(item: ExplorerChild): Promise<ExplorerItem> {

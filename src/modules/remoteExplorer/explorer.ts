@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { registerCommand } from '../../host';
+import { registerCommand, setContextValue } from '../../host';
 import {
   COMMAND_REMOTEEXPLORER_REFRESH,
   COMMAND_REMOTEEXPLORER_VIEW_CONTENT,
@@ -30,6 +30,8 @@ export default class RemoteExplorer {
     registerCommand(context, COMMAND_REMOTEEXPLORER_VIEW_CONTENT, (item: ExplorerItem) =>
       this._treeDataProvider.showItem(item)
     );
+
+    setContextValue('hasRemoteFilter', false);
   }
 
   refresh(item?: ExplorerItem) {
@@ -69,6 +71,17 @@ export default class RemoteExplorer {
 
   findRoot(remoteUri: vscode.Uri) {
     return this._treeDataProvider.findRoot(remoteUri);
+  }
+
+  setFilter(query: string): void {
+    this._treeDataProvider.setFilter(query);
+    const normalizedQuery = query.toLowerCase().trim();
+    setContextValue('hasRemoteFilter', Boolean(normalizedQuery));
+    this._explorerView.description = normalizedQuery ? `Filter: ${normalizedQuery}` : undefined;
+  }
+
+  getFilter(): string {
+    return this._treeDataProvider.getFilter();
   }
 
   private _refreshSelection() {
