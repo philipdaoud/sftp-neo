@@ -208,6 +208,7 @@ export function newConfig(basePath) {
             uploadOnSave: false,
             useTempFile: false,
             openSsh: false,
+            concurrency: 4,
             backup: {
               enabled: false,
               location: 'remote',

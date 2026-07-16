@@ -4,8 +4,9 @@ import { transfer, sync, TransferOption, SyncOption, TransferDirection } from '.
 import { runHook } from '../../modules/hooks';
 import { remoteBackupsProvider } from '../../modules/remoteBackups';
 import { isConnectionError, withRetry } from '../../helper';
+import logger from '../../logger';
 
-const TRANSFER_RETRY_ATTEMPTS = 2;
+const TRANSFER_RETRY_ATTEMPTS = 3;
 
 function createTransferHandle(direction: TransferDirection) {
   return async function handle(this: FileHandlerContext, option) {
@@ -63,7 +64,10 @@ function createTransferHandle(direction: TransferDirection) {
       {
         maxAttempts: TRANSFER_RETRY_ATTEMPTS,
         shouldRetry: isConnectionError,
-        onRetry: () => this.fileService.clearRemoteFileSystem(this.config),
+        onRetry: (err, attempt) => {
+          logger.info(`Connection lost during transfer (attempt ${attempt}/${TRANSFER_RETRY_ATTEMPTS - 1}). Reconnecting...`);
+          this.fileService.clearRemoteFileSystem(this.config);
+        },
       }
     );
 
@@ -116,7 +120,10 @@ export const sync2Remote = createFileHandler<SyncOption>({
       {
         maxAttempts: TRANSFER_RETRY_ATTEMPTS,
         shouldRetry: isConnectionError,
-        onRetry: () => this.fileService.clearRemoteFileSystem(this.config),
+        onRetry: (err, attempt) => {
+          logger.info(`Connection lost during transfer (attempt ${attempt}/${TRANSFER_RETRY_ATTEMPTS - 1}). Reconnecting...`);
+          this.fileService.clearRemoteFileSystem(this.config);
+        },
       }
     );
 
@@ -181,7 +188,10 @@ export const sync2Local = createFileHandler<SyncOption>({
       {
         maxAttempts: TRANSFER_RETRY_ATTEMPTS,
         shouldRetry: isConnectionError,
-        onRetry: () => this.fileService.clearRemoteFileSystem(this.config),
+        onRetry: (err, attempt) => {
+          logger.info(`Connection lost during transfer (attempt ${attempt}/${TRANSFER_RETRY_ATTEMPTS - 1}). Reconnecting...`);
+          this.fileService.clearRemoteFileSystem(this.config);
+        },
       }
     );
 

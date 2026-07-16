@@ -120,7 +120,11 @@ export interface ServiceConfig
 }
 
 export interface WatcherService {
-  create(watcherBase: string, watcherConfig: WatcherConfig): any;
+  create(
+    watcherBase: string,
+    watcherConfig: WatcherConfig,
+    ignore?: (fsPath: string) => boolean
+  ): any;
   dispose(watcherBase: string): void;
 }
 
@@ -315,6 +319,10 @@ function mergeConfigWithExternalRefer(
       if (value !== undefined) {
         if (key === 'host') {
           copyed[key] = value;
+        } else if (key === 'keepalive') {
+          // ServerAliveInterval in ssh_config is seconds; convert to milliseconds.
+          const ms = parseInt(value, 10) * 1000;
+          setConfigValue(copyed, key, ms);
         } else {
           setConfigValue(copyed, key, value);
         }
@@ -725,7 +733,8 @@ export default class FileService {
   }
 
   private _createWatcher() {
-    this._watcherService.create(this.baseDir, this._watcherConfig);
+    const config = this.getConfig();
+    this._watcherService.create(this.baseDir, this._watcherConfig, config.ignore || undefined);
   }
 
   private _disposeWatcher() {

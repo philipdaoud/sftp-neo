@@ -167,6 +167,11 @@
         "type": "number",
         "description": "The number of hours difference between the local machine and remote/server. (remote minus local)"
       },
+      "keepalive": {
+        "type": "number",
+        "description": "How often (in milliseconds) to send a keepalive packet/NOOP to keep the connection alive. Defaults to 30000 (30 seconds). Set to 0 to disable.",
+        "default": 30000
+      },
       "limitOpenFilesOnRemote": {
         "enum": ["number", true],
         "description": "Limit the open file descriptors to the specific number in a remote server. Set to true for using default limit(222). Do not set this unless you have to.",
@@ -323,7 +328,8 @@
       },
       "concurrency": {
         "type": "number",
-        "description": "Concurrency number."
+        "description": "Maximum number of files transferred simultaneously. Concurrent transfers share the same SSH session. Suggested values: 4 (shared/restricted servers), 8 (modern dedicated OpenSSH servers), 16 (high-performance dedicated servers). Increase gradually.",
+        "default": 4
       },
       "sshCustomParams": {
         "type": "string",

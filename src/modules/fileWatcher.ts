@@ -61,8 +61,12 @@ function doDelete() {
 const debouncedUpload = debounce(doUpload, ACTION_INTEVAL, { leading: true, trailing: true });
 const debouncedDelete = debounce(doDelete, ACTION_INTEVAL, { leading: true, trailing: true });
 
-function uploadHandler(uri: vscode.Uri) {
+function uploadHandler(uri: vscode.Uri, ignore?: (fsPath: string) => boolean) {
   if (!isValidFile(uri)) {
+    return;
+  }
+
+  if (ignore && ignore(uri.fsPath)) {
     return;
   }
 
@@ -80,7 +84,8 @@ function getWatcher(id) {
 
 function createWatcher(
   watcherBase: string,
-  watcherConfig: { files: false | string; autoUpload: boolean; autoDelete: boolean }
+  watcherConfig: { files: false | string; autoUpload: boolean; autoDelete: boolean },
+  ignore?: (fsPath: string) => boolean
 ) {
   let watcher = getWatcher(watcherBase);
   if (watcher) {
@@ -107,13 +112,17 @@ function createWatcher(
   addWatcher(watcherBase, watcher);
 
   if (watcherConfig.autoUpload) {
-    watcher.onDidCreate(uploadHandler);
-    watcher.onDidChange(uploadHandler);
+    watcher.onDidCreate(uri => uploadHandler(uri, ignore));
+    watcher.onDidChange(uri => uploadHandler(uri, ignore));
   }
 
   if (watcherConfig.autoDelete) {
     watcher.onDidDelete(uri => {
       if (!isValidFile(uri)) {
+        return;
+      }
+
+      if (ignore && ignore(uri.fsPath)) {
         return;
       }
 

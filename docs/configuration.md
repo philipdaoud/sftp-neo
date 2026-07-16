@@ -1,5 +1,29 @@
 # Full configuration
 
+## Sample configuration
+
+```json
+{
+  "name": "My Server",
+  "host": "localhost",
+  "protocol": "sftp",
+  "port": 22,
+  "username": "username",
+  "remotePath": "/",
+  "uploadOnSave": false,
+  "useTempFile": false,
+  "openSsh": false,
+  "concurrency": 4,
+  "keepalive": 30000,
+  "backup": {
+    "enabled": false,
+    "location": "remote",
+    "folder": ".vscode/sftp-backup",
+    "versions": 5
+  }
+}
+```
+
 ## name
 *string*: A string to identify your configuration.
 
@@ -115,7 +139,17 @@ Set `uploadOnSave` to false when you watch everything.
 The Remote Explorer decides which files and folders to show or hide based on this setting.
 
 ## concurrency
-*number*: Lowering the concurrency could get more stability because some clients/servers have some sort of configured/hard coded limit.
+*number*: Maximum number of files transferred simultaneously.
+
+Concurrent file transfers share the same SSH session; their streams and SFTP requests are multiplexed over a single connection and SFTP channel.
+
+Suggested values:
+
+- `4`: safe default for shared or restricted servers.
+- `8`: good starting point for modern dedicated OpenSSH servers.
+- `16`: high performance on fast, modern dedicated OpenSSH servers.
+
+Higher values increase the number of open files and outstanding SFTP requests, so raise the value gradually and test with your server.
 
 **default**: 4
 
@@ -123,6 +157,11 @@ The Remote Explorer decides which files and folders to show or hide based on thi
 *number*: The maximum connection time.
 
 **default**: 10000
+
+## keepalive
+*number*: How often (in milliseconds) to send a keepalive packet (SFTP) or `NOOP` command (FTP) to keep the control connection alive. Increase this value if the server still closes idle connections, or set to `0` to disable keepalives entirely.
+
+**default**: 30000
 
 ## limitOpenFilesOnRemote
 *mixed*: Limit open file descriptors to the specific number in a remote server.

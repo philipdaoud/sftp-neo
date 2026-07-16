@@ -39,6 +39,11 @@ class KeepAliveRemoteFs {
       remoteTimeOffsetInHours: number;
     }
   ): Promise<RemoteFileSystem> {
+    if (this.isValid && this.fs && this.fs.getClient().isClosed()) {
+      logger.debug('Cached remote connection is closed; reconnecting.');
+      this.invalid('closed');
+    }
+
     if (this.isValid) {
       this.pendingPromise = null;
       return Promise.resolve(this.fs);

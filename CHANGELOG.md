@@ -1,3 +1,20 @@
+## 3.3.0 - 2026-07-14
+* **New Option — `keepalive`:**
+  * Keeps idle SFTP/FTP connections alive by sending periodic keepalive packets (SFTP) or `NOOP` commands (FTP).
+  * Default is `30000` milliseconds (30 seconds). Set to `0` to disable.
+  * `ServerAliveInterval` from `~/.ssh/config` is now honored for SFTP and converted from seconds to milliseconds.
+* **Fix — Idle connection / FIN packet failures:**
+  * Cached connections are now checked before reuse; if the server closed the connection, the extension reconnects automatically instead of failing.
+  * FTP now detects socket `end`/`close`/`error` events and invalidates the cached client.
+  * Transfer retries increased from 2 to 3 for connection-related errors, with a clear "reconnecting..." log message.
+* **Fix — Watcher ignore rules:**
+  * The file watcher now applies `ignore` and `ignoreFile` patterns to `onDidCreate`, `onDidChange`, and `onDidDelete` events before queuing or logging.
+  * Prevents `.git`, local backups, and other ignored paths from flooding the SFTP output channel.
+* **Docs:**
+  * Expanded `concurrency` documentation with suggested values and the note that transfers share a single SSH session.
+  * Added a sample configuration block to the full configuration docs.
+  * The generated `sftp.json` now includes `concurrency: 4`.
+
 ## 3.2.0 - 2026-07-08
 * **Feature — Remote Explorer Filter:**
   * Quickly filter files and folders directly in the Remote Explorer sidebar. Click the filter icon in the Remote Explorer title bar, type a query, and the tree updates live as you type.

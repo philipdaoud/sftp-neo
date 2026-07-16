@@ -120,7 +120,17 @@ The Remote Explorer decides which files and folders to show or hide based on thi
 **default**: 0
 
 ## concurrency
-*number*: Lowering the concurrency could get more stability because some clients/servers have some sort of configured/hard coded limit.
+*number*: Maximum number of files transferred simultaneously.
+
+Concurrent file transfers share the same SSH session; their streams and SFTP requests are multiplexed over a single connection and SFTP channel.
+
+Suggested values:
+
+- `4`: safe default for shared or restricted servers.
+- `8`: good starting point for modern dedicated OpenSSH servers.
+- `16`: high performance on fast, modern dedicated OpenSSH servers.
+
+Higher values increase the number of open files and outstanding SFTP requests, so raise the value gradually and test with your server.
 
 **default**: 4
 

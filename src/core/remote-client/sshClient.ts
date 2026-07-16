@@ -14,6 +14,7 @@ export default class SSHClient extends RemoteClient {
   private hoppingClients: SSHClient[];
   private _opendFdNum: number = 0;
   private _queuedFdRequireCall: Array<(...args: any[]) => any> = [];
+  private _connected: boolean = false;
 
   _initClient() {
     return new Client();
@@ -31,6 +32,10 @@ export default class SSHClient extends RemoteClient {
         key => connectOption[key] != undefined
       )
     );
+  }
+
+  isClosed() {
+    return !this._connected;
   }
 
   async _doConnect(
@@ -337,13 +342,16 @@ export default class SSHClient extends RemoteClient {
       };
 
       client
-        .on('ready', resolve)
+        .on('ready', () => {
+          this._connected = true;
+          resolve();
+        })
         .on('error', err => {
           reject(new Error(`[${option.host}]: ${err.message}`));
         })
         .connect({
-          keepaliveInterval: 1000 * 30,
-          keepaliveCountMax: 2,
+          keepaliveInterval: this._resolveKeepalive(remoteOption.keepalive),
+          keepaliveCountMax: 3,
           readyTimeout: interactiveAuth
             ? Math.max(60 * 1000, connectTimeout || 0)
             : connectTimeout,
@@ -387,6 +395,7 @@ export default class SSHClient extends RemoteClient {
   }
 
   end() {
+    this._connected = false;
     this._client.end();
 
     if (this.hoppingClients) {
@@ -395,7 +404,25 @@ export default class SSHClient extends RemoteClient {
     }
   }
 
+  onDisconnected(cb: (reason: string) => void) {
+    super.onDisconnected((reason: string) => {
+      this._connected = false;
+      cb(reason);
+    });
+  }
+
   getFsClient() {
     return this.sftp;
+  }
+
+  private _resolveKeepalive(keepalive?: number): number {
+    const DEFAULT_KEEPALIVE_MS = 30 * 1000;
+    if (keepalive === 0) {
+      return 0;
+    }
+    if (keepalive === undefined || keepalive === null) {
+      return DEFAULT_KEEPALIVE_MS;
+    }
+    return keepalive > 0 ? keepalive : DEFAULT_KEEPALIVE_MS;
   }
 }

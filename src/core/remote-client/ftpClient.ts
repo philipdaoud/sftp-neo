@@ -1,5 +1,6 @@
 import { Client } from 'basic-ftp';
 import RemoteClient, { ConnectOption } from './remoteClient';
+import logger from '../../logger';
 
 /**
  * basic-ftp does not support concurrent commands on a single control connection.
@@ -33,7 +34,13 @@ function createSerializedClient(client: Client): Client {
   }) as Client;
 }
 
+const DEFAULT_KEEPALIVE_MS = 30 * 1000;
+
 export default class FTPClient extends RemoteClient {
+  private _keepaliveTimer?: ReturnType<typeof setInterval>;
+  private _onDisconnectedCb?: (reason: string) => void;
+  private _socketListenersAttached = false;
+
   _initClient() {
     const client = new Client(this._option.connectTimeout || 10000);
     return createSerializedClient(client);
@@ -43,8 +50,13 @@ export default class FTPClient extends RemoteClient {
     return connectOption.password != undefined;
   }
 
-  onDisconnected() {
-    // basic-ftp Client is not an EventEmitter and has no .on() method.
+  isClosed() {
+    return this._client.closed;
+  }
+
+  onDisconnected(cb: (reason: string) => void) {
+    this._onDisconnectedCb = cb;
+    this._attachSocketListeners();
   }
 
   async _doConnect(connectOption: ConnectOption): Promise<void> {
@@ -81,13 +93,61 @@ export default class FTPClient extends RemoteClient {
       secure,
       secureOptions: connectOption.secureOptions as any,
     });
+
+    this._attachSocketListeners();
+    this._startKeepalive(connectOption.keepalive);
   }
 
   end() {
+    if (this._keepaliveTimer) {
+      clearInterval(this._keepaliveTimer);
+      this._keepaliveTimer = undefined;
+    }
     this._client.close();
   }
 
   getFsClient() {
     return this._client;
+  }
+
+  private _attachSocketListeners() {
+    const socket = this._client.ftp.socket;
+    if (!socket || this._socketListenersAttached) {
+      return;
+    }
+
+    this._socketListenersAttached = true;
+    const notify = (reason: string) => {
+      if (this._onDisconnectedCb) {
+        this._onDisconnectedCb(reason);
+      }
+    };
+
+    socket.once('end', () => notify('end'));
+    socket.once('close', () => notify('close'));
+    socket.once('error', () => notify('error'));
+  }
+
+  private _startKeepalive(keepalive?: number) {
+    if (keepalive === 0) {
+      return;
+    }
+
+    const interval = keepalive && keepalive > 0 ? keepalive : DEFAULT_KEEPALIVE_MS;
+    if (this._keepaliveTimer) {
+      clearInterval(this._keepaliveTimer);
+    }
+
+    this._keepaliveTimer = setInterval(() => {
+      if (this._client.closed) {
+        return;
+      }
+
+      // Fire-and-forget NOOP to keep the control connection alive.
+      this._client.sendIgnoringError('NOOP').catch((err: unknown) => {
+        logger.debug(`FTP keepalive NOOP failed: ${(err as Error).message || err}`);
+      });
+    }, interval);
+    this._keepaliveTimer.unref();
   }
 }

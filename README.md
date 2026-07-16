@@ -17,7 +17,22 @@
 
 ---
 
-## 🎉 What's New in v3.2.0 — Remote Explorer Filter
+## 🎉 What's New in v3.3.0 — Keepalive, Reconnect & Watcher Ignore
+
+### 🔌 Stay Connected
+A new `keepalive` option sends periodic keepalive packets (SFTP) or `NOOP` commands (FTP) to keep idle connections alive. Default is `30000` ms; set to `0` to disable.
+
+### 🔄 Reconnect on Idle Timeout
+If the server closes an idle connection, the extension now detects the dead connection and reconnects automatically. Transfer retries have also been increased to 3 for connection-related errors.
+
+### 👁️ Watcher Respects Ignore Rules
+The file watcher now drops `ignore`/`ignoreFile` matches before queuing or logging, so `.git`, backups, and dependency folders no longer flood the SFTP output channel.
+
+---
+
+## 🎉 Previous Releases
+
+### v3.2.0 — Remote Explorer Filter
 
 <div align="center">
 
@@ -36,10 +51,6 @@ Quickly filter the Remote Explorer sidebar as you type. No more scrolling throug
 | 🏷️ **Always Visible** | The current filter is shown in the Remote Explorer header |
 
 > ⚡ [**Jump to Remote Explorer Filter Docs →**](./docs/commands.md#remote-explorer-filter)
-
----
-
-## 🎉 Previous Releases
 
 ### v3.1.0 — Local or Remote File Backups
 
