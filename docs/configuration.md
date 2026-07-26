@@ -1,7 +1,5 @@
 # Configuration
 
-This page has been folded into the single, complete reference:
-
 **→ [Complete `sftp.json` option reference](./options.md)**
 
 Jump to a section:

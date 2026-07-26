@@ -60,7 +60,7 @@ Set `"remoteExplorer": { "enableDragAndDrop": true }` and drag items around the 
 
 ## 📑 Quick Links
 
-[✨ Features](#-features) · [⚡ Quick Start](#-quick-start) · [🔧 Config Examples](#-config-examples) · [🔐 Security](#-security) · [🔑 SSH Authentication](#-ssh-authentication) · [🐛 Debug](#-debug) ·  [❓ FAQ](./FAQ.md)
+[✨ Features](#-features) · [⚡ Quick Start](#-quick-start) · [🔧 Config Examples](#-config-examples) · [📖 Configuration](./docs/configuration.md) · [🔐 Security](#-security) · [🔑 SSH Authentication](#-ssh-authentication) · [🐛 Debug](#-debug) ·  [❓ FAQ](./FAQ.md)
 
 ---
 
