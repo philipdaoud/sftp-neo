@@ -18,6 +18,12 @@ The root can be this single configuration object or an array of configuration
 objects. This is a reference rather than a recommended starting configuration:
 copy only the options needed by your setup.
 
+**Contents**: [All options](#complete-sftpjson-option-reference) ·
+[FTP and FTPS](#ftp-and-ftps) · [Local](#local) ·
+[SSH algorithm overrides](#ssh-algorithm-overrides) ·
+[SSH connection chain](#ssh-connection-chain) · [Profiles](#profiles) ·
+[Option details](#option-details) · [Safety notes](#safety-notes)
+
 ```jsonc
 {
   "name": "My Server",                      // Display name. Required by the schema; no runtime default.
@@ -237,6 +243,197 @@ are replaced as a whole; only `ignore` is appended to the top-level list.
   }
 }
 ```
+
+## Option details
+
+Options whose behaviour needs more than a comment line.
+
+### `context` and multiple configurations
+
+`context` is a path relative to the workspace root. Files under it belong to
+this configuration and map onto `remotePath`:
+
+```json
+{ "context": "client/dist", "remotePath": "/static" }
+```
+
+`client/dist/app.js` uploads to `/static/app.js`.
+
+When the root is an array, the configuration with the **longest matching
+`context`** handles a given file.
+
+### `password` and `passphrase`
+
+Prefer omitting both, or setting them to `null`. You are then prompted on first
+connect and can save the value to the OS credential store (macOS Keychain,
+Windows Credential Manager, Linux libsecret) rather than to the file, which
+keeps `sftp.json` safe to commit.
+
+Setting `passphrase` to `true` forces the prompt for an encrypted key without
+storing anything in the file.
+
+A plaintext `password` triggers a security warning; suppress it with the
+`sftp.suppressPlaintextPasswordWarning` VS Code setting.
+
+Secret Storage and SSH config lookups apply to the **top-level host only** — see
+[SSH connection chain](#ssh-connection-chain).
+
+### `concurrency`
+
+Concurrent transfers share one SSH session; their streams and SFTP requests are
+multiplexed over a single connection and SFTP channel.
+
+- `4` — safe default for shared or restricted servers.
+- `8` — reasonable for a modern dedicated OpenSSH server.
+- `16` — high throughput on fast, dedicated OpenSSH servers.
+
+Higher values mean more open files and more outstanding SFTP requests. Raise it
+gradually and test against your server. Forced to `1` for FTP.
+
+### `uploadOnSave` with `watcher.autoUpload`
+
+Safe to enable together. A save inside VS Code is claimed before the file is
+written, so the watcher skips it and only `uploadOnSave` uploads — one upload
+per Ctrl+S, not two. Writes from outside the editor never go through that path,
+so the watcher still catches them.
+
+### `watcher.autoDelete`
+
+Deletes on the server, driven by local filesystem events. Switching Git
+branches, or an `ignore` pattern that is wider than expected, can remove remote
+content you meant to keep. Folder deletes are recursive.
+
+Renames are not covered by this option: the watcher sees a rename as a delete
+plus a create, so the old remote path is removed and the new one re-uploaded.
+Use `watcher.autoRename` to rename in place instead.
+
+### `watcher.autoRename`
+
+Turns a rename or move made inside VS Code into a server-side rename. Renaming a
+folder then costs a single request regardless of size, and no file contents
+cross the network.
+
+Limits:
+
+- Covers only renames made **through VS Code** — the explorer, `F2`, drag to
+  move, refactorings. A terminal `mv` or `git mv` still looks like a delete plus
+  a create.
+- While a rename is in flight the watcher ignores the paths involved, so
+  `autoUpload`/`autoDelete` do not undo it.
+- Moves crossing into a different configuration are skipped and fall back to the
+  normal upload path.
+- If the remote copy does not exist yet, the rename fails; with `autoUpload` on,
+  the new path is uploaded instead.
+- A failed rename leaves the old remote path alone. Check the `sftp` output
+  channel.
+
+### `backup.location`
+
+- `"remote"` — copies live on the server under `remotePath`. Note that the copy
+  travels server → editor → server, so backing up large files moves real data.
+- `"local"` — copies live in the workspace, preserving the remote directory
+  structure inside `backup.folder`.
+
+`backup.folder` is resolved relative to `remotePath` for `"remote"` and to the
+workspace root for `"local"`. It is automatically excluded from sync and the
+Remote Explorer, and is never itself backed up.
+
+### `backup.onDelete`
+
+Requires `backup.enabled: true` and `backup.versions > 0`.
+
+- Deleting a folder backs up every file inside it first, recursively.
+- If any backup fails, the delete is **aborted** and nothing is removed. The
+  error names the file that could not be copied.
+- Symlinks are skipped rather than copied, since a copy of the link target would
+  not restore as a link.
+- Restore from the **Backups** panel.
+
+Covers `SFTP: Delete Remote`, `watcher.autoDelete`, and the deletions performed
+by `SFTP: Upload Changed Files`. It does **not** cover `syncOption.delete` — see
+[Safety notes](#safety-notes).
+
+### `remoteExplorer.enableDragAndDrop`
+
+A move is a server-side rename: one request, no file contents transferred.
+
+- Drop onto a **folder** to move items into it. Dropping onto a **file** moves
+  into that file's folder.
+- Moving a folder, or more than one item, asks for confirmation. Moving a single
+  file does not, since dragging it back undoes it.
+- Dropping a folder into itself or its own subfolder is refused.
+- Selecting a folder and something inside it moves only the folder.
+- Dropping onto empty space is refused: the destination is ambiguous when
+  several remotes are configured.
+- Dragging **between configurations** is refused outright rather than moving
+  part of the selection.
+- Dragging out of the Remote Explorer does nothing; use **Download**.
+
+Existing files are never overwritten — the move is reported as an error and
+nothing changes.
+
+### `hooks`
+
+Each value is a single shell command.
+
+| Hook | Runs |
+|---|---|
+| `preUpload` / `postUpload` | before / after each upload |
+| `preDownload` / `postDownload` | before / after each download |
+| `preSync` / `postSync` | before / after a sync |
+
+- Working directory is the **workspace root**.
+- Each command has a **30-second timeout**.
+- `stdout` and `stderr` go to the `sftp` output channel.
+- A failing `pre` hook aborts the transfer. A failing `post` hook reports an
+  error but cannot undo what already completed.
+
+Environment variables available to the command:
+
+| Variable | Value |
+|---|---|
+| `SFTP_LOCAL_PATH` | absolute local path of the file |
+| `SFTP_REMOTE_PATH` | absolute remote path of the file |
+| `SFTP_HOST` | the configured `host` |
+| `SFTP_PROTOCOL` | the configured `protocol` |
+
+Upload and download hooks fire **per file**, so a multi-file upload runs the
+command once per file. Keep it cheap, or drive it from `preSync`/`postSync`.
+
+### `remote`
+
+Names an entry in the `remotefs.remote` **VS Code user setting**, whose values
+fill in anything not set locally. Useful for keeping credentials out of a
+committed `sftp.json`.
+
+In `settings.json`:
+
+```json
+{
+  "remotefs.remote": {
+    "my-server": {
+      "scheme": "sftp",
+      "host": "example.com",
+      "username": "user",
+      "privateKeyPath": "~/.ssh/id_rsa"
+    }
+  }
+}
+```
+
+In `.vscode/sftp.json`:
+
+```json
+{
+  "remote": "my-server",
+  "remotePath": "/var/www/html",
+  "uploadOnSave": true
+}
+```
+
+- The entry's `scheme` maps onto `protocol`; its `rootPath` is ignored.
+- Values already set in `sftp.json` win — the entry only fills gaps.
+- An unknown name raises `Can't not find remote "<name>"`.
 
 ## Safety notes
 

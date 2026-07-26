@@ -2,6 +2,6 @@
 
 This page has been folded into the single, complete reference:
 
-**→ [`sftp.json` — FTP / FTPS](./configuration.md#ftp--ftps)**
+**→ [`sftp.json` — FTP and FTPS](./options.md#ftp-and-ftps)**
 
 Covers `secure`, `secureOptions`, and `passive`.

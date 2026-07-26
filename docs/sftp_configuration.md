@@ -2,7 +2,8 @@
 
 This page has been folded into the single, complete reference:
 
-**→ [`sftp.json` — SFTP authentication](./configuration.md#sftp-authentication)**
+**→ [Complete `sftp.json` option reference](./options.md)**
 
-Covers `privateKeyPath`, `passphrase`, `agent`, `interactiveAuth`,
-`sshConfigPath`, `algorithms`, `sshCustomParams`, and `hop`.
+- [All options, with defaults](./options.md#complete-sftpjson-option-reference) — `agent`, `privateKeyPath`, `passphrase`, `interactiveAuth`, `sshConfigPath`, `sshCustomParams`
+- [SSH algorithm overrides](./options.md#ssh-algorithm-overrides) — `algorithms`
+- [SSH connection chain](./options.md#ssh-connection-chain) — `hop`

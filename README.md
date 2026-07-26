@@ -323,7 +323,7 @@ The four options worth understanding before switching on:
 | `backup.onDelete` | `false` | Makes deletes recoverable, but copies file contents, so deleting a large folder moves a lot of data. |
 
 > 📖 **Every option explained** — types, defaults, and behaviour — in
-> [docs/configuration.md](./docs/configuration.md).
+> [docs/options.md](./docs/options.md).
 
 </details>
 
@@ -567,8 +567,8 @@ Need to troubleshoot?
 
 ## 📖 Configuration Reference
 
-See [docs/configuration.md](./docs/configuration.md) for every `sftp.json`
-option — types, defaults, and behaviour.
+See [docs/options.md](./docs/options.md) for every `sftp.json` option — types,
+defaults, and behaviour.
 
 ---
 
