@@ -17,6 +17,13 @@
 
 ---
 
+
+## 📑 Quick Links
+
+[✨ Features](#-features) · [⚡ Quick Start](#-quick-start) · [🔧 Config Examples](#-config-examples) · [📖 Configuration](./docs/configuration.md) · [🔐 Security](#-security) · [🔑 SSH Authentication](#-ssh-authentication) · [🐛 Debug](#-debug) ·  [❓ FAQ](./FAQ.md)
+
+---
+
 ## 🎉 What's New in v3.4.0 — Rename, Move & Safer Deletes
 
 Manage remote files without switching to FileZilla or an SSH terminal.
@@ -58,11 +65,6 @@ Set `"remoteExplorer": { "enableDragAndDrop": true }` and drag items around the 
 
 ---
 
-## 📑 Quick Links
-
-[✨ Features](#-features) · [⚡ Quick Start](#-quick-start) · [🔧 Config Examples](#-config-examples) · [📖 Configuration](./docs/configuration.md) · [🔐 Security](#-security) · [🔑 SSH Authentication](#-ssh-authentication) · [🐛 Debug](#-debug) ·  [❓ FAQ](./FAQ.md)
-
----
 
 ## ✨ Features
 
