@@ -60,7 +60,7 @@ Set `"remoteExplorer": { "enableDragAndDrop": true }` and drag items around the 
 
 ## 📑 Quick Links
 
-[✨ Features](#-features) · [⚡ Quick Start](#-quick-start) · [🔧 Config Examples](#-config-examples) · [🔐 Security](#-security) · [🔑 SSH Authentication](#-ssh-authentication) · [🐛 Debug](#-debug) · [❓ FAQ](./FAQ.md)
+[✨ Features](#-features) · [⚡ Quick Start](#-quick-start) · [🔧 Config Examples](#-config-examples) · [🔐 Security](#-security) · [🔑 SSH Authentication](#-ssh-authentication) · [🐛 Debug](#-debug) · [📖 Configuration](./docs/configuration.md) · [❓ FAQ](./FAQ.md)
 
 ---
 
@@ -562,6 +562,13 @@ Need to troubleshoot?
 2. Search for `sftp.debug` and set it to `true`.
 3. Reload VS Code.
 4. View logs in **Output → SFTP**.
+
+---
+
+## 📖 Configuration Reference
+
+See [docs/configuration.md](./docs/configuration.md) for every `sftp.json`
+option — types, defaults, and behaviour.
 
 ---
 
