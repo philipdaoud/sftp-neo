@@ -281,6 +281,17 @@ thing.
     "enableDragAndDrop": false
   },
 
+  "hooks": {
+    "preUpload": "",
+    "postUpload": "",
+    "preDownload": "",
+    "postDownload": "",
+    "preSync": "",
+    "postSync": ""
+  },
+
+  "filePerm": 644,
+  "dirPerm": 755,
   "remoteTimeOffsetInHours": 0,
   "limitOpenFilesOnRemote": false,
 
@@ -291,6 +302,9 @@ thing.
   "defaultProfile": "dev"
 }
 ```
+
+FTP-only options: `secure`, `secureOptions`, `passive`. SFTP-only extras:
+`algorithms`, `sshCustomParams`, and `hop` (bastion hosts — see above).
 
 `sftp.json` is strict JSON — **comments are not supported**, so don't paste `//`
 notes into it.
@@ -308,7 +322,8 @@ The four options worth understanding before switching on:
 | `watcher.autoRename` | `false` | Turns a rename into a server-side rename instead of a re-upload. Only covers renames made **through VS Code** — `mv` in a terminal still looks like delete + create. |
 | `backup.onDelete` | `false` | Makes deletes recoverable, but copies file contents, so deleting a large folder moves a lot of data. |
 
-> 📖 Full descriptions in the [Wiki](https://github.com/philipdaoud/sftp-neo/wiki/Configuration).
+> 📖 **Every option explained** — types, defaults, and behaviour — in
+> [docs/configuration.md](./docs/configuration.md).
 
 </details>
 
