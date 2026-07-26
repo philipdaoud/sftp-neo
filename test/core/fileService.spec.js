@@ -165,3 +165,94 @@ describe('FileService plaintext password warning', () => {
     expect(settingStore.sftp.suppressPlaintextPasswordWarning).toBe(true);
   });
 });
+
+describe('FileService watcher profile override', () => {
+  const app = require('../../src/app').default;
+
+  // AppState invokes its observer on every change and holds only one, so the
+  // tests need something registered before touching the profile.
+  app.state.subscribe(() => {});
+
+  function watcherConfigPassedTo(create) {
+    return create.mock.calls[create.mock.calls.length - 1][1];
+  }
+
+  function serviceWithWatcherService(config) {
+    const create = jest.fn();
+    const dispose = jest.fn();
+    const service = new FileService('/tmp', '/tmp', config);
+    service.setWatcherService({ create, dispose });
+    return { service, create, dispose };
+  }
+
+  beforeEach(() => {
+    app.state.profile = null;
+  });
+
+  afterEach(() => {
+    app.state.profile = null;
+  });
+
+  test('uses the root watcher config when no profile is active', () => {
+    const { create } = serviceWithWatcherService(
+      createConfig({ watcher: { files: '**/*', autoUpload: true, autoDelete: false } })
+    );
+
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(watcherConfigPassedTo(create)).toEqual({
+      files: '**/*',
+      autoUpload: true,
+      autoDelete: false,
+    });
+  });
+
+  test('a profile overrides the watcher config', () => {
+    const { service, create } = serviceWithWatcherService(
+      createConfig({
+        watcher: { files: '**/*', autoUpload: true, autoDelete: false },
+        profiles: {
+          dev: { watcher: { files: '**/*', autoUpload: true, autoDelete: false } },
+          prod: { watcher: { files: '**/*', autoUpload: false, autoDelete: false } },
+        },
+      })
+    );
+
+    app.state.profile = 'prod';
+    service.reloadWatcher();
+
+    expect(watcherConfigPassedTo(create).autoUpload).toBe(false);
+
+    app.state.profile = 'dev';
+    service.reloadWatcher();
+
+    expect(watcherConfigPassedTo(create).autoUpload).toBe(true);
+  });
+
+  test('profiles that do not mention watcher inherit the root one', () => {
+    const { service, create } = serviceWithWatcherService(
+      createConfig({
+        watcher: { files: '**/*', autoUpload: true, autoDelete: false },
+        profiles: {
+          prod: { host: 'prod.example.com' },
+        },
+      })
+    );
+
+    app.state.profile = 'prod';
+    service.reloadWatcher();
+
+    expect(watcherConfigPassedTo(create).autoUpload).toBe(true);
+  });
+
+  test('reloadWatcher disposes the previous watcher before rebuilding', () => {
+    const { service, create, dispose } = serviceWithWatcherService(
+      createConfig({ watcher: { files: '**/*', autoUpload: true, autoDelete: false } })
+    );
+
+    dispose.mockClear();
+    service.reloadWatcher();
+
+    expect(dispose).toHaveBeenCalledWith('/tmp');
+    expect(create).toHaveBeenCalledTimes(2);
+  });
+});

@@ -20,12 +20,17 @@
           },
           "autoUpload": {
             "type": "boolean",
-            "description": "upload when file changed.",
+            "description": "Upload when the file changes. Safe to combine with uploadOnSave: a save inside VS Code uploads once, not twice.",
             "default": true
           },
           "autoDelete": {
             "type": "boolean",
-            "description": "delete when file changed.",
+            "description": "Delete the remote file/folder when the local one is deleted. Destructive and cannot be undone.",
+            "default": false
+          },
+          "autoRename": {
+            "type": "boolean",
+            "description": "Rename/move on the server when a file or folder is renamed or moved inside VS Code, instead of re-uploading it. Only covers renames made through VS Code, not 'mv' in a terminal.",
             "default": false
           }
         },
@@ -33,7 +38,8 @@
         "default": {
           "files": "**/*",
           "autoUpload": true,
-          "autoDelete": false
+          "autoDelete": false,
+          "autoRename": false
         }
       },
       "defaultProfile": {
@@ -120,13 +126,19 @@
             "description": "Maximum number of backup versions to keep per file. Set to 0 to disable backups even when enabled is true.",
             "default": 5,
             "minimum": 0
+          },
+          "onDelete": {
+            "type": "boolean",
+            "description": "Also back up files before they are deleted from the server, not just before they are overwritten. Deleting a folder backs up every file inside it first, and the delete is aborted if any backup fails. This makes deletes considerably slower.",
+            "default": false
           }
         },
         "default": {
           "enabled": false,
           "location": "remote",
           "folder": ".vscode/sftp-backup",
-          "versions": 5
+          "versions": 5,
+          "onDelete": false
         }
       },
       "ignore": {
@@ -160,6 +172,11 @@
             "type": "number",
             "description": "Remote Explorer will ascending sorting by this value. If the values are the same, sort by name.",
             "default": 0
+          },
+          "enableDragAndDrop": {
+            "type": "boolean",
+            "description": "Allow dragging files and folders inside the Remote Explorer to move them on the server. Moves are server-side renames, so no data is transferred. Dragging between different configurations is not supported.",
+            "default": false
           }
         }
       },

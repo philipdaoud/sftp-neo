@@ -55,6 +55,7 @@ interface ServiceOption {
   remoteExplorer: {
     filesExclude?: string[];
     order: number;
+    enableDragAndDrop?: boolean;
   };
   remoteTimeOffsetInHours: number;
   limitOpenFilesOnRemote: number | true;
@@ -64,6 +65,7 @@ interface WatcherConfig {
   files: false | string;
   autoUpload: boolean;
   autoDelete: boolean;
+  autoRename: boolean;
 }
 
 export interface BackupConfig {
@@ -71,6 +73,7 @@ export interface BackupConfig {
   location?: 'local' | 'remote';
   folder: string;
   versions: number;
+  onDelete: boolean;
 }
 
 interface SftpOption {
@@ -431,7 +434,6 @@ let id = 0;
 export default class FileService {
   private _eventEmitter: EventEmitter = new EventEmitter();
   private _name: string;
-  private _watcherConfig: WatcherConfig;
   private _profiles: string[];
   private _pendingTransferTasks: Set<TransferTask> = new Set();
   private _transferSchedulers: TransferScheduler[] = [];
@@ -453,7 +455,6 @@ export default class FileService {
     this.id = ++id;
     this.workspace = workspace;
     this.baseDir = baseDir;
-    this._watcherConfig = config.watcher;
     this._config = config;
     if (config.profiles) {
       this._profiles = Object.keys(config.profiles);
@@ -478,6 +479,21 @@ export default class FileService {
     }
 
     this._watcherService = watcherService;
+    this._createWatcher();
+  }
+
+  /**
+   * Rebuild the file watcher from the currently active profile.
+   *
+   * The watcher config is resolved through `getConfig`, so switching profiles
+   * has no effect until the watcher is recreated.
+   */
+  reloadWatcher() {
+    if (!this._watcherService) {
+      return;
+    }
+
+    this._disposeWatcher();
     this._createWatcher();
   }
 
@@ -733,8 +749,10 @@ export default class FileService {
   }
 
   private _createWatcher() {
+    // Read from the profile-merged config, so a profile can override the
+    // watcher the same way it overrides everything else.
     const config = this.getConfig();
-    this._watcherService.create(this.baseDir, this._watcherConfig, config.ignore || undefined);
+    this._watcherService.create(this.baseDir, config.watcher, config.ignore || undefined);
   }
 
   private _disposeWatcher() {

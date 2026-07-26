@@ -51,6 +51,8 @@ export async function activate(context: vscode.ExtensionContext) {
 
   setContextValue('enabled', true);
   app.sftpBarItem.show();
+  // Note: AppState holds a single observer, so this must stay the only
+  // subscribe call - a second one would silently replace this handler.
   app.state.subscribe(_ => {
     const currentText = app.sftpBarItem.getText();
     // current is showing profile
@@ -60,6 +62,16 @@ export async function activate(context: vscode.ExtensionContext) {
     if (app.remoteExplorer) {
       app.remoteExplorer.refresh();
     }
+
+    // The watcher config is resolved per profile, so it has to be rebuilt.
+    getAllFileService().forEach(fileService => {
+      try {
+        fileService.reloadWatcher();
+      } catch (error) {
+        // A profile that fails validation shouldn't stop the others.
+        reportError(error, `reload watcher for ${fileService.name || fileService.baseDir}`);
+      }
+    });
   });
   try {
     await setup(workspaceFolders);

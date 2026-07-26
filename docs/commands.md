@@ -72,6 +72,42 @@ Compare file modification times, and will always perform the action that causes 
 ## SFTP: List Active Folder
 List the folder the current file is located in.
 
+## SFTP: Rename Remote
+Rename a file or folder **on the server**, without re-uploading it. Right-click
+an item in the Remote Explorer and choose **Rename Remote**.
+
+The rename happens server-side, so it costs one request no matter how large the
+file or folder is.
+
+- Type a plain name to rename in place.
+- Include `/` to move the item, e.g. entering `archive/old-notes.txt` while
+  renaming `notes.txt` moves it into the `archive` folder. The destination must
+  stay inside the configured `remotePath`.
+- The command refuses to overwrite: if something already exists at the
+  destination, it reports that instead of clobbering it.
+
+This only touches the remote copy — your local file keeps its current name.
+
+You can also move items by **dragging them inside the Remote Explorer**, once
+[remoteExplorer.enableDragAndDrop](https://github.com/philipdaoud/sftp-neo/wiki/Configuration#remoteexplorerenabledraganddrop)
+is turned on for that configuration. It uses the same server-side rename.
+
+## SFTP: Delete Remote
+Delete a file or folder **on the server**. Available by right-clicking in the
+Remote Explorer, right-clicking in the local file explorer, and from the Command
+Palette (where it acts on the active editor's file).
+
+Folder deletes are recursive. You are asked to confirm first.
+
+By default there is no undo. Set
+[backup.onDelete](https://github.com/philipdaoud/sftp-neo/wiki/Configuration#backupondelete)
+to `true` to save a copy of everything a delete removes into the backup folder
+first — the delete is aborted if any copy fails, and you can restore from the
+**Backups** panel.
+
+To have local deletions propagate to the server automatically instead, see
+[watcher.autoDelete](https://github.com/philipdaoud/sftp-neo/wiki/Configuration#watcherautodelete).
+
 ## sftp.upload
 Upload file or folders.
 

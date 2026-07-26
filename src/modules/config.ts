@@ -43,6 +43,7 @@ const configScheme = z.object({
     files: z.union([z.string(), z.literal(false), z.null()]).optional(),
     autoUpload: z.boolean().optional(),
     autoDelete: z.boolean().optional(),
+    autoRename: z.boolean().optional(),
   }).optional(),
   concurrency: z.number().int().optional(),
 
@@ -57,12 +58,14 @@ const configScheme = z.object({
     location: z.enum(['local', 'remote']).optional(),
     folder: z.string().optional(),
     versions: z.number().int().min(0).optional(),
+    onDelete: z.boolean().optional(),
   }).optional(),
   remoteTimeOffsetInHours: z.number().optional(),
 
   remoteExplorer: z.object({
     filesExclude: z.array(z.string()).optional(),
     order: z.number().optional(),
+    enableDragAndDrop: z.boolean().optional(),
   }).optional(),
 
   hooks: z.object({
@@ -124,6 +127,7 @@ const defaultConfig = {
 
   remoteExplorer: {
     order: 0,
+    enableDragAndDrop: false,
   },
 
   backup: {
@@ -131,6 +135,7 @@ const defaultConfig = {
     location: 'remote',
     folder: '.vscode/sftp-backup',
     versions: 5,
+    onDelete: false,
   },
 };
 
@@ -214,6 +219,7 @@ export function newConfig(basePath) {
               location: 'remote',
               folder: '.vscode/sftp-backup',
               versions: 5,
+              onDelete: false,
             },
           },
           { spaces: 4 }

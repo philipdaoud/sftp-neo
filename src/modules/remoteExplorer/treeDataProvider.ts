@@ -16,6 +16,7 @@ import {
 } from '../../constants';
 import { getAllFileService } from '../serviceManager';
 import { getExtensionSetting } from '../ext';
+import { isRemotePathAtOrUnder } from '../../helper';
 
 type Id = number;
 
@@ -102,6 +103,37 @@ export default class RemoteTreeData
         this._onDidChangeFolder.fire(parent);
       }
       this._onDidChangeFile.fire(makePreivewUrl(item.resource.uri));
+    }
+  }
+
+  /**
+   * Drop the cached items for a remote path and everything below it.
+   *
+   * Items are cached by remote path, so after a rename or a move the old
+   * entries would otherwise keep resolving to paths that no longer exist and
+   * break getParent/reveal for the whole subtree.
+   */
+  purge(remoteUri: vscode.Uri): void {
+    if (!this._map) {
+      return;
+    }
+
+    const target = UResource.makeResource(remoteUri);
+
+    for (const [key, item] of Array.from(this._map.entries())) {
+      // Roots are owned by _getRoots and must outlive any single path.
+      if ((item as ExplorerRoot).explorerContext !== undefined) {
+        continue;
+      }
+
+      const { remoteId, fsPath } = item.resource;
+      if (remoteId !== target.remoteId) {
+        continue;
+      }
+
+      if (isRemotePathAtOrUnder(target.fsPath, fsPath)) {
+        this._map.delete(key);
+      }
     }
   }
 

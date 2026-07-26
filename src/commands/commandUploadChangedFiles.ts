@@ -95,27 +95,28 @@ async function handleCommand(hint: any) {
     }
   }
 
-  await Promise.all(creates.concat(uploads).map(change => {
+  await Promise.all(creates.concat(uploads).map(async change => {
     try {
-      uploadFile(change.uri)
+      await uploadFile(change.uri);
     } catch (e) {
-      logger.error('Upload failed.', e);
+      logger.error(e, 'Upload failed.');
     }
   }));
   await Promise.all(
-    renames.map(change => {
+    renames.map(async change => {
       try {
-        renameRemote(change.originalUri, { originPath: change.renameUri!.fsPath });
+        // originalUri is the pre-rename path, renameUri the new one.
+        await renameRemote(change.originalUri, { newLocalPath: change.renameUri!.fsPath });
       } catch (e) {
-        logger.error('Rename failed.', e);
+        logger.error(e, 'Rename failed.');
       }
     })
   );
-  await Promise.all(deletes.map(change => {
+  await Promise.all(deletes.map(async change => {
     try {
-      removeRemote(change.uri)
+      await removeRemote(change.uri);
     } catch (e) {
-      logger.error('Deletion failed.', e);
+      logger.error(e, 'Deletion failed.');
     }
   }));
 

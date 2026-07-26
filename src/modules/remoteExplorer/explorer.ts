@@ -3,12 +3,14 @@ import { registerCommand, setContextValue } from '../../host';
 import {
   COMMAND_REMOTEEXPLORER_REFRESH,
   COMMAND_REMOTEEXPLORER_VIEW_CONTENT,
+  VIEW_REMOTE_EXPLORER,
 } from '../../constants';
 import { UResource } from '../../core';
 import { toRemotePath } from '../../helper';
 import { REMOTE_SCHEME } from '../../constants';
 import { getFileService } from '../serviceManager';
 import RemoteTreeDataProvider, { ExplorerItem } from './treeDataProvider';
+import RemoteExplorerDragAndDropController from './dragAndDrop';
 
 export default class RemoteExplorer {
   private _explorerView: vscode.TreeView<ExplorerItem>;
@@ -20,10 +22,13 @@ export default class RemoteExplorer {
       vscode.workspace.registerTextDocumentContentProvider(REMOTE_SCHEME, this._treeDataProvider)
     );
 
-    this._explorerView = vscode.window.createTreeView('remoteExplorer', {
+    // The controller is always attached; it no-ops for any config that hasn't
+    // opted in via remoteExplorer.enableDragAndDrop, which is per-config.
+    this._explorerView = vscode.window.createTreeView(VIEW_REMOTE_EXPLORER, {
       showCollapseAll: true,
       treeDataProvider: this._treeDataProvider,
       canSelectMany: true,
+      dragAndDropController: new RemoteExplorerDragAndDropController(this._treeDataProvider),
     });
 
     registerCommand(context, COMMAND_REMOTEEXPLORER_REFRESH, () => this._refreshSelection());
@@ -59,6 +64,10 @@ export default class RemoteExplorer {
     }
 
     this._treeDataProvider.refresh(item);
+  }
+
+  purge(remoteUri: vscode.Uri) {
+    this._treeDataProvider.purge(remoteUri);
   }
 
   get onDidChangeSelection(): vscode.Event<vscode.TreeViewSelectionChangeEvent<ExplorerItem>> {

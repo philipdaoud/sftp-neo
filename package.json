@@ -2,7 +2,7 @@
   "name": "sftp-neo",
   "displayName": "SFTP Neo",
   "description": "SFTP/FTP sync",
-  "version": "3.3.0",
+  "version": "3.4.0",
   "publisher": "PhilipDaoud",
   "author": "Philip Daoud <philipdaoud@gmail.com> (https://github.com/PhilipDaoud)",
   "engines": {
@@ -268,7 +268,12 @@
       },
       {
         "command": "sftp.delete.remote",
-        "title": "Delete",
+        "title": "Delete Remote",
+        "category": "SFTP"
+      },
+      {
+        "command": "sftp.rename.remote",
+        "title": "Rename Remote",
         "category": "SFTP"
       },
       {
@@ -491,6 +496,10 @@
         },
         {
           "command": "sftp.delete.remote",
+          "when": "sftp.enabled"
+        },
+        {
+          "command": "sftp.rename.remote",
           "when": "false"
         },
         {
@@ -608,6 +617,11 @@
           "group": "sftp.trans@2",
           "alt": "sftp.forceDownload",
           "when": "sftp.enabled && explorerResourceIsFolder"
+        },
+        {
+          "command": "sftp.delete.remote",
+          "group": "sftp.trans@3",
+          "when": "sftp.enabled && !explorerResourceIsRoot"
         }
       ],
       "editor/context": [
@@ -736,8 +750,13 @@
           "when": "view == remoteExplorer && viewItem != root && viewItem == file"
         },
         {
+          "command": "sftp.rename.remote",
+          "group": "7_modification@1",
+          "when": "view == remoteExplorer && viewItem != root"
+        },
+        {
           "command": "sftp.delete.remote",
-          "group": "7_modification",
+          "group": "7_modification@2",
           "when": "view == remoteExplorer && viewItem != root"
         },
         {

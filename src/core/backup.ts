@@ -164,6 +164,91 @@ export async function createBackup(
   return backupPath;
 }
 
+/**
+ * Back up everything that a delete is about to destroy.
+ *
+ * Unlike the overwrite backup this refuses to fail quietly: a delete is
+ * irreversible, so if a copy can't be made the caller must not proceed. Any
+ * failure throws.
+ *
+ * Returns the number of files backed up.
+ */
+export async function backupBeforeDelete(
+  targetPath: string,
+  targetFs: FileSystem,
+  backupConfig: BackupConfig,
+  remotePath: string,
+  storage?: BackupStorage
+): Promise<number> {
+  if (!backupConfig.enabled || !backupConfig.onDelete || backupConfig.versions <= 0) {
+    return 0;
+  }
+
+  const stat = await targetFs.lstat(targetPath);
+
+  let files: string[];
+  if (stat.type === FileType.Directory) {
+    // Backups kept on the server live under remotePath, so a delete high enough
+    // up the tree would otherwise try to back up the backups.
+    const excludeRoot = storage
+      ? null
+      : getBackupFolder(remotePath, backupConfig.folder, upath);
+
+    files = [];
+    await collectFilesToBackup(targetFs, targetPath, excludeRoot, files);
+  } else if (stat.type === FileType.File) {
+    files = [targetPath];
+  } else {
+    // A symlink's content isn't meaningfully restorable as a symlink, and
+    // reading it would copy whatever it points at.
+    logger.info(`skipping delete backup for ${targetPath}: not a regular file`);
+    return 0;
+  }
+
+  if (files.length === 0) {
+    return 0;
+  }
+
+  logger.info(`backing up ${files.length} file(s) before deleting ${targetPath}`);
+
+  let backedUp = 0;
+  for (const file of files) {
+    const backupPath = await createBackup(file, targetFs, backupConfig, remotePath, storage);
+    if (!backupPath) {
+      throw new Error(
+        `Aborted delete of '${targetPath}': could not back up '${file}'. ` +
+          `See the sftp output channel for details. Nothing has been deleted.`
+      );
+    }
+    backedUp += 1;
+  }
+
+  return backedUp;
+}
+
+async function collectFilesToBackup(
+  fs: FileSystem,
+  dir: string,
+  excludeRoot: string | null,
+  acc: string[]
+): Promise<void> {
+  if (excludeRoot && (dir === excludeRoot || dir.startsWith(`${excludeRoot}/`))) {
+    return;
+  }
+
+  const entries = await fs.list(dir);
+  for (const entry of entries) {
+    if (entry.type === FileType.Directory) {
+      await collectFilesToBackup(fs, entry.fspath, excludeRoot, acc);
+    } else if (entry.type === FileType.File) {
+      if (excludeRoot && entry.fspath.startsWith(`${excludeRoot}/`)) {
+        continue;
+      }
+      acc.push(entry.fspath);
+    }
+  }
+}
+
 export async function pruneBackups(
   targetPath: string,
   targetFs: FileSystem,

@@ -7,19 +7,24 @@ import { WatcherService, TransferDirection } from '../core';
 import app from '../app';
 import StatusBarItem from '../ui/statusBarItem';
 import { getRunningTransformTasks } from './serviceManager';
+import { isWatcherSuppressed } from './watcherSuppression';
 
 const watchers: {
   [x: string]: vscode.FileSystemWatcher;
 } = {};
 
-const uploadQueue = new Set<vscode.Uri>();
-const deleteQueue = new Set<vscode.Uri>();
+// Keyed by fsPath, not by Uri: every watcher event carries a fresh Uri object,
+// so a Set would compare by reference and queue the same file more than once.
+const uploadQueue = new Map<string, vscode.Uri>();
+const deleteQueue = new Map<string, vscode.Uri>();
 
 // less than 550 will not work
 const ACTION_INTEVAL = 550;
 
 function doUpload() {
-  const files = Array.from(uploadQueue).sort((a, b) => fileDepth(b.fsPath) - fileDepth(a.fsPath));
+  const files = Array.from(uploadQueue.values()).sort(
+    (a, b) => fileDepth(b.fsPath) - fileDepth(a.fsPath)
+  );
   uploadQueue.clear();
 
   const currentDownloadTasks = getRunningTransformTasks().filter(
@@ -44,7 +49,9 @@ function doUpload() {
 }
 
 function doDelete() {
-  const files = Array.from(deleteQueue).sort((a, b) => fileDepth(b.fsPath) - fileDepth(a.fsPath));
+  const files = Array.from(deleteQueue.values()).sort(
+    (a, b) => fileDepth(b.fsPath) - fileDepth(a.fsPath)
+  );
   deleteQueue.clear();
   files.forEach(async uri => {
     const fspath = uri.fsPath;
@@ -70,7 +77,14 @@ function uploadHandler(uri: vscode.Uri, ignore?: (fsPath: string) => boolean) {
     return;
   }
 
-  uploadQueue.add(uri);
+  // Either a rename is already moving this path on the server, or uploadOnSave
+  // is about to upload it. Both would turn into a redundant second upload.
+  if (isWatcherSuppressed(uri.fsPath)) {
+    logger.trace(`[watcher/updated] skipped (handled elsewhere) ${uri.fsPath}`);
+    return;
+  }
+
+  uploadQueue.set(uri.fsPath, uri);
   debouncedUpload();
 }
 
@@ -87,11 +101,10 @@ function createWatcher(
   watcherConfig: { files: false | string; autoUpload: boolean; autoDelete: boolean },
   ignore?: (fsPath: string) => boolean
 ) {
-  let watcher = getWatcher(watcherBase);
-  if (watcher) {
-    // clear old watcher
-    watcher.dispose();
-  }
+  // Clear any old watcher. Drop it from the table too: switching to a profile
+  // that disables watching returns early below, and a disposed watcher left
+  // behind would be handed out again on the next lookup.
+  removeWatcher(watcherBase);
 
   if (!watcherConfig) {
     return;
@@ -103,7 +116,7 @@ function createWatcher(
     return;
   }
 
-  watcher = vscode.workspace.createFileSystemWatcher(
+  const watcher = vscode.workspace.createFileSystemWatcher(
     new vscode.RelativePattern(watcherBase, watcherConfig.files),
     false,
     false,
@@ -126,7 +139,15 @@ function createWatcher(
         return;
       }
 
-      deleteQueue.add(uri);
+      // The old path of a rename shows up here as a plain delete. Acting on it
+      // would recursively remove the remote folder the rename is about to move
+      // (or has already moved), destroying any remote-only files inside it.
+      if (isWatcherSuppressed(uri.fsPath)) {
+        logger.trace(`[watcher/removed] skipped (handled elsewhere) ${uri.fsPath}`);
+        return;
+      }
+
+      deleteQueue.set(uri.fsPath, uri);
       debouncedDelete();
     });
   }

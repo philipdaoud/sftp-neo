@@ -1,3 +1,62 @@
+## 3.4.0 - 2026-07-26
+
+Remote file lifecycle: rename, move, and delete on the server without leaving the editor — and without re-uploading anything.
+
+### Features
+
+* **`SFTP: Rename Remote`:**
+  * Rename or move a file/folder on the server from the Remote Explorer context menu, without re-uploading it. The rename is server-side, so a folder costs one request regardless of how many files it holds.
+  * Entering a name containing `/` moves the item; the destination is validated to stay inside `remotePath`.
+  * Refuses to overwrite: if something already exists at the destination the command reports it instead of clobbering it.
+* **`SFTP: Delete Remote` is now discoverable:**
+  * Added to the local file explorer context menu and the Command Palette (where it targets the active editor's file). Previously it was only reachable by right-clicking in the Remote Explorer.
+  * Renamed from "Delete" to "Delete Remote" so it can't be mistaken for a local delete, and the confirmation is now a modal dialog rather than a dismissible toast.
+* **New Option — `watcher.autoRename` (default `false`):**
+  * Renaming or moving a file/folder inside VS Code renames it on the server instead of re-uploading it. No file contents cross the network.
+  * Covers renames made through VS Code (explorer, `F2`, drag to move, refactorings). `mv` in a terminal or `git mv` still appears as a delete plus a create.
+  * While a rename is in flight the file watcher ignores the affected paths, so `autoUpload`/`autoDelete` can't undo it or re-upload what was just moved. The claim is registered before the files move on disk, so it is always in place before the watcher can react.
+  * Moves that cross into a different configuration are skipped and fall back to the normal upload path. If the remote source doesn't exist yet, the rename fails and the new path is uploaded instead when `autoUpload` is on.
+  * Moving into a remote folder that doesn't exist yet creates it first, rather than failing with a bare "no such file".
+* **New Option — `remoteExplorer.enableDragAndDrop` (default `false`):**
+  * Drag files and folders inside the Remote Explorer to move them on the server. A move is a server-side rename: one request, no file contents transferred, regardless of folder size.
+  * Enabled per configuration, so it can be on for staging and off for production.
+  * Drop onto a folder to move into it; dropping onto a file moves into that file's folder. Moving a folder or multiple items asks for confirmation; moving a single file does not, since dragging it back undoes it.
+  * Refuses to move a folder into itself or its own subtree, refuses drops that cross configurations (the whole drop, not just part of it), and refuses drops on empty space where the destination would be ambiguous. Selecting a folder plus something inside it moves only the folder.
+  * Existing files are never overwritten — the move reports an error instead.
+  * Dragging *out* of the Remote Explorer does nothing; VS Code has no API to materialise a remote file on drop, so downloading stays a context-menu action.
+* **New Option — `backup.onDelete` (default `false`):**
+  * Backups previously only ran before an upload overwrote a remote file. With this on, files are also backed up before they are **deleted**, making deletes recoverable from the **Backups** panel.
+  * Covers every delete route: **SFTP: Delete Remote**, `watcher.autoDelete`, and the deletions performed by **SFTP: Upload Changed Files**.
+  * Deleting a folder backs up every file inside it first, recursively. If any backup fails the delete is **aborted** and nothing is removed — the error names the file that could not be copied.
+  * Symlinks are skipped rather than dereferenced, and the backup folder is never backed up into itself.
+  * Requires `backup.enabled` and a non-zero `backup.versions`. Backups copy file contents, so backing up a large folder before deleting it can move a lot of data.
+  * The **Delete Remote** confirmation now says whether a restorable copy will be kept, instead of always claiming the delete can't be undone.
+
+### Fixes
+
+* **`uploadOnSave` and `watcher.autoUpload` no longer upload twice:**
+  * With both enabled, a Ctrl+S uploaded the file once from the save handler and again from the file watcher. The path is now claimed on `onWillSaveTextDocument`, before the bytes reach disk, so the watcher skips its own event for that write and `uploadOnSave` is the only thing that uploads.
+  * Writes from outside the editor (AI agents, build steps) never trigger that event, so the watcher still picks them up as before. Every Ctrl+S still forces an upload.
+  * The claim is time-based rather than consumed by the first matching event: one write can produce more than one watcher event depending on platform, and a consume-once marker would let the second through. It expires after 2 seconds.
+  * Only applied when `uploadOnSave` is actually on for that file, so a manual save with only the watcher enabled still uploads.
+* **Profiles now control the file watcher:**
+  * `watcher` was read from the raw config, captured once at startup, while `ignore` in the same call came from the profile-merged config. A profile setting `watcher.autoUpload` was silently ignored. It is now resolved through the active profile like every other option, so auto-upload can be on for dev and off for prod.
+  * Switching with **SFTP: Set Profile** rebuilds the watcher immediately. Previously the watcher was created once and never recreated, so a profile change couldn't have taken effect even after the fix above.
+  * Disposed watchers are no longer left in the watcher table when a profile switch turns watching off.
+* **`SFTP: Upload Changed Files` never renamed anything:**
+  * The rename handler passed local filesystem paths to the remote server and applied them in reverse, so Git renames always failed. It now resolves the destination through the service config and renames source → destination.
+  * Upload, rename, and delete results were not awaited, so every failure was swallowed as an unhandled rejection. Failures are now caught and logged to the SFTP output channel.
+* **Stale Remote Explorer cache after a rename:**
+  * The tree caches items by remote path; renaming a folder left every descendant pointing at a path that no longer existed, breaking reveal and refresh for that subtree. The affected subtree is now dropped from the cache, and both the source and destination parents are refreshed.
+* **The watcher queues no longer hold duplicates:**
+  * The pending upload and delete queues were `Set`s of `Uri` objects. Every watcher event carries a fresh `Uri`, so `Set` compared by reference and the same file could be queued — and uploaded — several times. They are now keyed by path.
+
+### Docs
+
+* The README gained a full `sftp.json` reference block listing every option with its default, plus a note on the four options that are off by default and why.
+* `watcher.autoDelete` is now documented properly: its defaults, the fact that it is destructive, and how it interacts with renames.
+* Documented overriding `watcher` per profile, and the new `SFTP: Rename Remote` / `SFTP: Delete Remote` behaviour.
+
 ## 3.3.0 - 2026-07-14
 * **New Option — `keepalive`:**
   * Keeps idle SFTP/FTP connections alive by sending periodic keepalive packets (SFTP) or `NOOP` commands (FTP).

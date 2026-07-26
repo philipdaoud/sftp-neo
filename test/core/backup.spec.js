@@ -210,3 +210,166 @@ describe('backup lifecycle', () => {
     expect(vol.existsSync(path.join('/workspace', '.vscode/sftp-backup', 'index.php.20260603000000.bak'))).toBe(false);
   });
 });
+
+describe('backupBeforeDelete', () => {
+  const { backupBeforeDelete } = require('../../src/core/backup');
+
+  const baseConfig = {
+    enabled: true,
+    folder: '.vscode/sftp-backup',
+    versions: 5,
+    onDelete: true,
+  };
+
+  function backupFiles(root) {
+    return Object.keys(vol.toJSON(root) || {}).filter(p => p.endsWith('.bak'));
+  }
+
+  // FileSystem methods are defined as non-writable prototype properties, so an
+  // override has to be installed with defineProperty rather than assignment.
+  function withFailingGet(fs, shouldFail) {
+    const wrapper = Object.create(fs);
+    Object.defineProperty(wrapper, 'get', {
+      configurable: true,
+      writable: true,
+      value: (p, option) =>
+        shouldFail(p) ? Promise.reject(new Error('read failed')) : fs.get(p, option),
+    });
+    return wrapper;
+  }
+
+  afterEach(() => {
+    vol.reset();
+  });
+
+  test('is a no-op unless onDelete is on', async () => {
+    vol.fromJSON({ '/var/www/index.php': 'content' }, '/');
+    const fs = createRemoteFs();
+
+    const count = await backupBeforeDelete(
+      '/var/www/index.php',
+      fs,
+      { ...baseConfig, onDelete: false },
+      '/var/www'
+    );
+
+    expect(count).toBe(0);
+    expect(vol.existsSync('/var/www/.vscode/sftp-backup')).toBe(false);
+  });
+
+  test('is a no-op when backups are disabled entirely', async () => {
+    vol.fromJSON({ '/var/www/index.php': 'content' }, '/');
+    const fs = createRemoteFs();
+
+    const count = await backupBeforeDelete(
+      '/var/www/index.php',
+      fs,
+      { ...baseConfig, enabled: false },
+      '/var/www'
+    );
+
+    expect(count).toBe(0);
+  });
+
+  test('backs up a single file', async () => {
+    vol.fromJSON({ '/var/www/index.php': 'content' }, '/');
+    const fs = createRemoteFs();
+
+    const count = await backupBeforeDelete('/var/www/index.php', fs, baseConfig, '/var/www');
+
+    expect(count).toBe(1);
+    const backups = backupFiles('/var/www/.vscode/sftp-backup');
+    expect(backups.length).toBe(1);
+    expect(vol.readFileSync(backups[0], 'utf8')).toBe('content');
+  });
+
+  test('backs up every file in a folder, preserving layout', async () => {
+    vol.fromJSON(
+      {
+        '/var/www/site/index.php': 'index',
+        '/var/www/site/css/main.css': 'css',
+        '/var/www/site/js/deep/app.js': 'js',
+        '/var/www/untouched.txt': 'keep',
+      },
+      '/'
+    );
+    const fs = createRemoteFs();
+
+    const count = await backupBeforeDelete('/var/www/site', fs, baseConfig, '/var/www');
+
+    expect(count).toBe(3);
+
+    const backupRoot = '/var/www/.vscode/sftp-backup';
+    const backups = backupFiles(backupRoot);
+    expect(backups.length).toBe(3);
+
+    // Relative directory layout is preserved under the backup root.
+    expect(backups.some(p => p.startsWith(`${backupRoot}/site/index.php.`))).toBe(true);
+    expect(backups.some(p => p.startsWith(`${backupRoot}/site/css/main.css.`))).toBe(true);
+    expect(backups.some(p => p.startsWith(`${backupRoot}/site/js/deep/app.js.`))).toBe(true);
+
+    // Files outside the delete target are not touched.
+    expect(backups.some(p => p.includes('untouched'))).toBe(false);
+  });
+
+  test('does not descend into the remote backup folder itself', async () => {
+    vol.fromJSON(
+      {
+        '/var/www/index.php': 'index',
+        '/var/www/.vscode/sftp-backup/index.php.20260603000000.bak': 'old backup',
+      },
+      '/'
+    );
+    const fs = createRemoteFs();
+
+    const count = await backupBeforeDelete('/var/www', fs, baseConfig, '/var/www');
+
+    // Only index.php, never the pre-existing .bak.
+    expect(count).toBe(1);
+  });
+
+  test('skips symlinks rather than copying what they point at', async () => {
+    vol.fromJSON({ '/var/www/real.txt': 'real' }, '/');
+    vol.symlinkSync('/var/www/real.txt', '/var/www/link.txt');
+    const fs = createRemoteFs();
+
+    const count = await backupBeforeDelete('/var/www/link.txt', fs, baseConfig, '/var/www');
+
+    expect(count).toBe(0);
+  });
+
+  test('throws instead of returning when a backup cannot be made', async () => {
+    vol.fromJSON(
+      {
+        '/var/www/site/a.txt': 'a',
+        '/var/www/site/b.txt': 'b',
+      },
+      '/'
+    );
+    const fs = createRemoteFs();
+
+    // Delegate to the real fs, but fail reading one of the two files.
+    // The fs methods are non-writable prototype properties, so plain
+    // assignment on a derived object silently does nothing.
+    const flaky = withFailingGet(fs, p => p.endsWith('b.txt'));
+
+    await expect(
+      backupBeforeDelete('/var/www/site', flaky, baseConfig, '/var/www')
+    ).rejects.toThrow(/could not back up/);
+  });
+
+  test('a failed backup leaves the delete to the caller, which never runs', async () => {
+    // Guards the contract removeRemote relies on: backupBeforeDelete throws
+    // before any removal happens, so nothing is deleted on a partial backup.
+    vol.fromJSON({ '/var/www/site/a.txt': 'a' }, '/');
+    const fs = createRemoteFs();
+
+    const flaky = withFailingGet(fs, () => true);
+
+    await expect(
+      backupBeforeDelete('/var/www/site', flaky, baseConfig, '/var/www')
+    ).rejects.toThrow();
+
+    expect(vol.existsSync('/var/www/site/a.txt')).toBe(true);
+  });
+});

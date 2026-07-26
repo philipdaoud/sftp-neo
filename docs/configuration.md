@@ -123,8 +123,98 @@ Set `uploadOnSave` to false when you watch everything.
 ## watcher.autoUpload
 *boolean*: Upload when the file changed.
 
+Safe to combine with `uploadOnSave`. A save inside VS Code is claimed before the
+file is written, so the watcher skips it and only `uploadOnSave` uploads — one
+upload per Ctrl+S, not two. Writes from outside the editor (an AI agent, a build
+step) never go through that path, so the watcher still picks them up.
+
+**default**: true
+
+
+### Overriding the watcher per profile
+
+`watcher` can be set inside a profile, so external changes upload automatically
+on one environment and not another:
+
+```json
+{
+  "watcher": { "files": "**/*", "autoUpload": false },
+  "profiles": {
+    "dev":  { "host": "dev.example.com",  "watcher": { "files": "**/*", "autoUpload": true } },
+    "prod": { "host": "prod.example.com", "watcher": { "files": "**/*", "autoUpload": false } }
+  }
+}
+```
+
+Profiles replace object options wholesale rather than merging them key by key,
+so repeat `files` in each profile rather than setting `autoUpload` alone. A
+profile that doesn't mention `watcher` inherits the top-level one.
+
+Switching with **SFTP: Set Profile** rebuilds the watcher straight away; no
+window reload is needed.
+
 ## watcher.autoDelete
-*boolean*: Delete when the file is removed.
+*boolean*: Delete the remote file or folder when the local one is deleted.
+
+Off by default. Turn it on to keep the remote in step with local deletions
+instead of leaving orphaned files behind:
+
+```json
+"watcher": {
+  "files": "**/*",
+  "autoUpload": true,
+  "autoDelete": true
+}
+```
+
+> **Warning**: this deletes on the server, and it is driven by local filesystem
+> events. Switching Git branches, or an `ignore` pattern that is wider than you
+> expect, can remove remote content you meant to keep. Folder deletes are
+> recursive. Enable [backup.onDelete](#backupondelete) to keep a restorable copy
+> of everything a delete removes.
+
+Renames and moves are not covered by this option. The watcher sees them as a
+delete plus a create, so with `autoDelete` on the old remote file is removed and
+the new one re-uploaded rather than renamed in place. Enable
+[watcher.autoRename](#watcherautorename) to rename on the server instead, or use
+**SFTP: Rename Remote** in the Remote Explorer for a one-off.
+
+**default**: false
+
+## watcher.autoRename
+*boolean*: Rename or move on the server when you rename or move a file/folder
+inside VS Code, instead of re-uploading it.
+
+Off by default. With it on, renaming a folder costs a **single** server-side
+request no matter how many files it holds, and no file contents cross the
+network:
+
+```json
+"watcher": {
+  "files": "**/*",
+  "autoUpload": true,
+  "autoRename": true
+}
+```
+
+Without it, a rename is seen as a delete plus a create: the whole folder is
+re-uploaded under its new name and the old remote folder is left behind.
+
+Notes and limits:
+
+- **Only covers renames made through VS Code** — the explorer, `F2`, drag to
+  move, and refactorings. A `mv` in the terminal or a `git mv` still looks like
+  a delete plus a create to the extension.
+- While a rename is in flight the watcher ignores the paths involved, so
+  `autoUpload`/`autoDelete` don't undo it.
+- Moves that cross into a different configuration are skipped and fall back to
+  the normal upload path.
+- If the remote copy doesn't exist yet (the file was never uploaded), the rename
+  fails and, when `autoUpload` is on, the new path is uploaded instead.
+- The old remote path is left alone if the rename fails; check the `sftp` output
+  channel.
+
+**default**: false
 
 ## remoteTimeOffsetInHours
 *number*: The number of hours difference between the local machine and the remote server (remote minus local).
@@ -137,6 +227,41 @@ Set `uploadOnSave` to false when you watch everything.
 ## remoteExplorer.filesExclude
 *string[]*: Configure that patterns for excluding files and folders.
 The Remote Explorer decides which files and folders to show or hide based on this setting.
+
+
+## remoteExplorer.enableDragAndDrop
+*boolean*: Allow dragging files and folders inside the Remote Explorer to move
+them on the server.
+
+Off by default. It is enabled per configuration, so you can turn it on for a
+staging server and leave it off for production:
+
+```json
+"remoteExplorer": {
+  "enableDragAndDrop": true
+}
+```
+
+A move is a server-side rename: one request, no file contents transferred, no
+matter how large the folder is.
+
+- Drop onto a **folder** to move items into it. Dropping onto a **file** moves
+  into the folder that file lives in.
+- Moving a folder, or moving more than one item, asks for confirmation first.
+  Moving a single file does not, since dragging it back undoes it.
+- Dropping a folder into itself or into one of its own subfolders is refused.
+- If you select a folder and something inside it, only the folder moves.
+- Dropping onto empty space is refused, because the destination is ambiguous
+  when several remotes are configured.
+- Dragging **between different configurations** is not supported; the whole drop
+  is refused rather than moving part of the selection.
+- Dragging out of the Remote Explorer (to the file explorer or the editor) does
+  nothing. Use **Download** from the context menu instead.
+
+Existing files are not overwritten: if something already exists at the
+destination the move is reported as an error and nothing is changed.
+
+**default**: false
 
 ## concurrency
 *number*: Maximum number of files transferred simultaneously.
@@ -206,9 +331,47 @@ Set to true for using default `limit(222)`. Do not set this unless you have to.
 
 **default**: 5
 
+## backup.onDelete
+*boolean*: Also back up files before they are **deleted** from the server, not
+just before they are overwritten.
+
+Off by default, and only takes effect when `backup.enabled` is `true` and
+`backup.versions` is greater than `0`.
+
+```json
+"backup": {
+  "enabled": true,
+  "location": "remote",
+  "folder": ".vscode/sftp-backup",
+  "versions": 5,
+  "onDelete": true
+}
+```
+
+With it on, every delete route is covered: **SFTP: Delete Remote**,
+[watcher.autoDelete](#watcherautodelete), and the deletions performed by
+**SFTP: Upload Changed Files**.
+
+- Deleting a **folder** backs up every file inside it first, recursively.
+- If any backup fails, the delete is **aborted** and nothing is removed. The
+  error names the file that could not be copied.
+- Symlinks are skipped rather than copied, since a copy of the link target
+  wouldn't restore as a link.
+- The backup folder itself is never backed up, so deleting a folder that
+  contains it won't recurse into old backups.
+- Restore from the **Backups** panel, the same as for overwrite backups.
+
+> **Performance**: backups copy file contents. With `location: "remote"` the
+> data travels server → editor → server, so backing up a large folder before
+> deleting it can take a long time and move a lot of data. This is the trade
+> for being able to undo a delete.
+
+**default**: false
+
 ***
 
 # SFTP only configuration
+
 
 ## agent
 *string*: Path to ssh-agent's UNIX socket for ssh-agent-based user authentication.

@@ -7,6 +7,8 @@ export const SETTING_KEY_REMOTE = 'remotefs.remote';
 
 export const REMOTE_SCHEME = 'remote';
 
+export const VIEW_REMOTE_EXPLORER = 'remoteExplorer';
+
 export const CONGIF_FILENAME = 'sftp.json';
 export const CONFIG_PATH = path.join(VENDOR_FOLDER, CONGIF_FILENAME);
 
@@ -54,6 +56,7 @@ export const COMMAND_LIST = 'sftp.list';
 export const COMMAND_LIST_ACTIVEFOLDER = 'sftp.listActiveFolder';
 export const COMMAND_LIST_ALL = 'sftp.listAll';
 export const COMMAND_DELETE_REMOTE = 'sftp.delete.remote';
+export const COMMAND_RENAME_REMOTE = 'sftp.rename.remote';
 export const COMMAND_REVEAL_IN_EXPLORER = 'sftp.revealInExplorer';
 export const COMMAND_REVEAL_IN_REMOTE_EXPLORER = 'sftp.revealInRemoteExplorer';
 
