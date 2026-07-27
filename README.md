@@ -13,14 +13,23 @@
 
 </div>
 
-> 🍴 **Forked & Modernized** from [Natizyskunk/vscode-sftp](https://github.com/Natizyskunk/vscode-sftp), originally based on the abandoned [liximomo/vscode-sftp](https://github.com/liximomo/vscode-sftp). Updated dependencies, new features, and full compatibility with the latest VS Code APIs.
+---
+
+> **Forked & Modernized** from [Natizyskunk/vscode-sftp](https://github.com/Natizyskunk/vscode-sftp), originally based on the abandoned [liximomo/vscode-sftp](https://github.com/liximomo/vscode-sftp). Updated dependencies, new features, and full compatibility with the latest VS Code APIs.
 
 ---
 
 
 ## 📑 Quick Links
 
-[✨ Features](#-features) · [⚡ Quick Start](#-quick-start) · [🔧 Config Examples](#-config-examples) · [📖 Configuration](./docs/configuration.md) · [🔐 Security](#-security) · [🔑 SSH Authentication](#-ssh-authentication) · [🐛 Debug](#-debug) ·  [❓ FAQ](./FAQ.md)
+<div align="center">
+
+### ✨ [Features](#-features) &emsp;·&emsp; ⚡ [Quick Start](#-quick-start) &emsp;·&emsp; 🔧 [Config Examples](#-config-examples) &emsp;·&emsp; 📖 [Configuration](./docs/configuration.md) 
+### 🔐 [Security](#-security) &emsp;·&emsp; 🔑 [SSH Authentication](#-ssh-authentication) &emsp;·&emsp; 🐛 [Debug](#-debug) &emsp;·&emsp; ❓ [FAQ](./FAQ.md)
+
+</div>
+
+
 
 ---
 

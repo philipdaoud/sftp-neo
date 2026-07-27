@@ -183,20 +183,31 @@ async function transferWithType(
   }
 }
 
-async function removeFile(file: string, fs: FileSystem, fileType: FileType, option) {
+async function removeFile(
+  file: string,
+  fs: FileSystem,
+  fileType: FileType,
+  option,
+  direction: TransferDirection
+) {
   if (option.ignore && option.ignore(file)) {
     return;
   }
 
+  // Deletions target the receiving side, which is local when syncing
+  // remote ➞ local. Label it so the log is not misleading.
+  const side =
+    direction === TransferDirection.LOCAL_TO_REMOTE ? 'remote' : 'local';
+
   switch (fileType) {
     case FileType.Directory:
       await fileOperations.removeDir(file, fs, option);
-      logger.info('folder removed.');
+      logger.info(`${side} folder removed: ${file}`);
       break;
     case FileType.File:
     case FileType.SymbolicLink:
       await fileOperations.removeFile(file, fs, option);
-      logger.info('file removed.');
+      logger.info(`${side} file removed: ${file}`);
       break;
     default:
       break;
@@ -366,8 +377,16 @@ async function _sync(
     }
 
     // side-effect
-    await Promise.all(fileMissed.map(file => removeFile(file, targetFs, FileType.File, transferOption)));
-    await Promise.all(dirMissed.map(file => removeFile(file, targetFs, FileType.Directory, transferOption)));
+    await Promise.all(
+      fileMissed.map(file =>
+        removeFile(file, targetFs, FileType.File, transferOption, transferDirection)
+      )
+    );
+    await Promise.all(
+      dirMissed.map(file =>
+        removeFile(file, targetFs, FileType.Directory, transferOption, transferDirection)
+      )
+    );
 
     const transFilePromise = file2trans.map(([src, target, direction, option]) => {
       const isReversed = direction === altDirection;
