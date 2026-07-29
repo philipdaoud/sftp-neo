@@ -228,7 +228,7 @@ Reach a server through a bastion host:
 
 ### 📋 Every Option, With Defaults
 
-> ##For a complete, detailed list of all configuration options, see [options.md](./options.md).##
+> For a complete, detailed list of all configuration options, see [options.md](./options.md).
 
 
 
