@@ -228,12 +228,18 @@ Reach a server through a bastion host:
 
 ### 📋 Every Option, With Defaults
 
+> ##For a complete, detailed list of all configuration options, see [options.md](./options.md).##
+
+
+
 You only need the handful of options your setup actually uses — the block below
 is a **reference**, not a starting point. Copy the lines you want, not the whole
 thing.
 
+
+
 <details>
-<summary>Show the full <code>sftp.json</code> reference</summary>(./docs/configuration.md) 
+<summary>Show the full <code>sftp.json</code> reference</summary>
 
 ```json
 {
