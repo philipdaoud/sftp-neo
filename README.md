@@ -233,7 +233,7 @@ is a **reference**, not a starting point. Copy the lines you want, not the whole
 thing.
 
 <details>
-<summary>Show the full <code>sftp.json</code> reference</summary>
+<summary>Show the full <code>sftp.json</code> reference</summary>(./docs/configuration.md) 
 
 ```json
 {
