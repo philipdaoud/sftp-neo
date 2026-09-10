@@ -256,3 +256,31 @@ describe('FileService watcher profile override', () => {
     expect(create).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('FileService .vscode safeguard', () => {
+  test('.vscode is ignored even when user "ignore" is empty', () => {
+    const service = new FileService('/tmp', '/tmp', createConfig({ ignore: [] }));
+    const { ignore } = service.getConfig();
+
+    expect(ignore('/tmp/.vscode/sftp.json')).toBe(true);
+    expect(ignore('/tmp/.vscode')).toBe(true);
+  });
+
+  test('.vscode stays ignored even if user "ignore" tries to negate it', () => {
+    const service = new FileService(
+      '/tmp',
+      '/tmp',
+      createConfig({ ignore: ['!.vscode', '!.vscode/**'] })
+    );
+    const { ignore } = service.getConfig();
+
+    expect(ignore('/tmp/.vscode/sftp.json')).toBe(true);
+  });
+
+  test('unrelated files are not affected by the safeguard', () => {
+    const service = new FileService('/tmp', '/tmp', createConfig({ ignore: [] }));
+    const { ignore } = service.getConfig();
+
+    expect(ignore('/tmp/index.js')).toBe(false);
+  });
+});

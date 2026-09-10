@@ -57,7 +57,7 @@ copy only the options needed by your setup.
   "limitOpenFilesOnRemote": false,          // false, true (222), or number (minimum 127). Default: false.
   "remoteTimeOffsetInHours": 0,             // Remote time minus local time. Default: 0.
 
-  "ignore": [],                             // User patterns. Default: []; **/.ftpquota stays internal.
+  "ignore": [],                             // User patterns. Default: []; .vscode and **/.ftpquota stay internal.
   "ignoreFile": "",                         // Additional ignore file. Default: none.
 
   "watcher": {
@@ -445,6 +445,11 @@ In `.vscode/sftp.json`:
   direction.
   `backup.onDelete` currently protects non-sync deletion paths only; it does not
   back up deletions performed by `syncOption.delete`.
-- The runtime `ignore` default is `[]`. Apart from the internal
-  `**/.ftpquota` exclusion, project files—including `.vscode/sftp.json`—are not
-  excluded automatically. Add explicit ignore patterns for sensitive files.
+- The runtime `ignore` default is `[]`. `.vscode` is always excluded, regardless
+  of this list, because it commonly holds `sftp.json` (server host/credentials)
+  and bots actively probe the web for `/.vscode/sftp.json`. Apart from that and
+  the internal `**/.ftpquota` exclusion, other project files are not excluded
+  automatically. `SFTP: Config` pre-populates `ignore` with common patterns
+  (`.git`, `.env`, `.env.*`, `*.log`, and similar) for new configurations—review
+  and adjust them for your project, especially `src`, which some projects need
+  to upload.

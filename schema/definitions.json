@@ -143,12 +143,28 @@
       },
       "ignore": {
         "type": "array",
-        "description": "Files to ignore. Same behavior as gitignore.",
+        "description": "Files to ignore. Same behavior as gitignore. .vscode is always excluded at runtime regardless of this list.",
         "items": {
           "type": "string",
           "description": "Ignore pattern."
         },
-        "default": [".vscode", ".git", ".DS_Store"]
+        "default": [
+          ".vscode",
+          ".git",
+          ".github",
+          ".DS_Store",
+          "Thumbs.db",
+          "src",
+          ".env",
+          ".env.*",
+          "AGENTS.md",
+          "CLAUDE.md",
+          ".claude",
+          ".cursor",
+          "*.log",
+          "*.tmp",
+          "*.bak"
+        ]
       },
       "ignoreFile": {
         "type": "string",

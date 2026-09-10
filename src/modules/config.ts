@@ -214,6 +214,26 @@ export function newConfig(basePath) {
             useTempFile: false,
             openSsh: false,
             concurrency: 4,
+            ignore: [
+              '.vscode',
+              '.git',
+              '.github',
+              '.DS_Store',
+              'Thumbs.db',
+
+              'src',
+              '.env',
+              '.env.*',
+
+              'AGENTS.md',
+              'CLAUDE.md',
+              '.claude',
+              '.cursor',
+
+              '*.log',
+              '*.tmp',
+              '*.bak',
+            ],
             backup: {
               enabled: false,
               location: 'remote',

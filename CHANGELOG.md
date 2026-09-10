@@ -1,3 +1,20 @@
+## 3.5.0 - 2026-09-10
+
+### Security
+
+* **`.vscode` is now always excluded from transfers:** it commonly holds
+  `sftp.json`, which can contain server host, username, and even a plaintext
+  password. Bots actively probe the web for `/.vscode/sftp.json`, so this
+  exclusion applies at runtime regardless of the `ignore` option and cannot be
+  turned off from `sftp.json`.
+* **`SFTP: Config` now pre-populates `ignore`** on newly generated
+  configurations with common patterns: `.vscode`, `.git`, `.github`,
+  `.DS_Store`, `Thumbs.db`, `src`, `.env`, `.env.*`, `AGENTS.md`, `CLAUDE.md`,
+  `.claude`, `.cursor`, `*.log`, `*.tmp`, `*.bak`. The list is fully editable
+  in the generated file — remove or add entries as needed, e.g. delete `src`
+  if your project uploads its source directly. Existing `sftp.json` files are
+  untouched.
+
 ## 3.4.0 - 2026-07-26
 
 Remote file lifecycle: rename, move, and delete on the server without leaving the editor — and without re-uploading anything.
