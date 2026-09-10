@@ -33,7 +33,15 @@
 
 ---
 
-## 🎉 What's New in v3.4.0 — Rename, Move & Safer Deletes
+## 🎉 What's New in v3.5.0 — Secure by Default
+
+`.vscode` — the folder that commonly holds `sftp.json` with your host, username, and sometimes a plaintext password — is now **always excluded from transfers**, regardless of your `ignore` option, and this can't be turned off from `sftp.json`. Bots actively scan the web for `/.vscode/sftp.json`.
+
+`SFTP: Config` now pre-populates a sensible `ignore` list on newly generated configs — `.vscode`, `.git`, `.github`, `.DS_Store`, `Thumbs.db`, `src`, `.env`, `.env.*`, `AGENTS.md`, `CLAUDE.md`, `.claude`, `.cursor`, `*.log`, `*.tmp`, `*.bak` — fully editable, and existing `sftp.json` files are untouched.
+
+---
+
+## 🎉 v3.4.0 — Rename, Move & Safer Deletes
 
 Manage remote files without switching to FileZilla or an SSH terminal.
 
@@ -267,7 +275,7 @@ thing.
   "useTempFile": false,
   "openSsh": false,
 
-  "ignore": [".vscode", ".git", ".DS_Store"],
+  "ignore": [".vscode", ".git", ".github", ".DS_Store", "Thumbs.db", "src", ".env", ".env.*", "AGENTS.md", "CLAUDE.md", ".claude", ".cursor", "*.log", "*.tmp", "*.bak"],
   "ignoreFile": ".gitignore",
 
   "watcher": {
@@ -368,6 +376,8 @@ SFTP Neo stores passwords & passphrases in your **OS credential store** (macOS K
 The same works for private key `passphrase`.
 
 > 🧹 Manage saved credentials anytime with `SFTP: Delete Saved Password`.
+
+> 🚫 **`.vscode` is always excluded from transfers**, regardless of your `ignore` option and even if `sftp.json` tries to override it. It commonly holds `sftp.json` itself, which bots actively probe for on the open web.
 
 ---
 
