@@ -2,6 +2,13 @@
 
 ### Features
 
+* **`SFTP: Preview Sync`:**
+  * Pick a direction, then review a checkable list of every file the sync would upload, download, or delete, grouped into new, changed, and deleted. Uncheck anything to skip it; press Escape to cancel and nothing is transferred.
+  * The preview is a true dry run: it lists both trees but creates no folders, deletes nothing, and doesn't save dirty editors. The selected items then run through the normal transfer queue, so retries, backups (`backup.onDelete` included), and hooks behave as in a regular sync.
+  * If the connection drops mid-sync, the plan is rebuilt after reconnecting and the same selection is applied.
+* **New Option — `syncOption.preview` (default `"onDelete"`):**
+  * `"onDelete"` shows the preview automatically only when a sync would delete something, so ordinary syncs stay one click while destructive ones get a second look.
+  * `"always"` previews every sync; `"never"` restores the previous behaviour exactly.
 * **Accept a changed SSH host key from the warning dialog:**
   * When a server's host key changes (reinstall, migration, container rebuild), a modal warning now shows the stored and received fingerprints with **Accept New Key** and **Cancel**, instead of only an error that pointed at `~/.vscode-sftp/known_hosts.json`.
   * Accepting replaces the stored key for this workspace only; Cancel refuses the connection as before.

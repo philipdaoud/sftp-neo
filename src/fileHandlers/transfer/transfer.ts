@@ -12,7 +12,12 @@ import { flatten } from '../../utils';
 import logger from '../../logger';
 import { getOpenTextDocuments } from '../../host';
 
-interface InternalTransferOption extends FileHandleOption, TransferTaskTransferOption {}
+interface InternalTransferOption extends FileHandleOption, TransferTaskTransferOption {
+  // plan only: collect tasks and deletions without touching either filesystem
+  dryRun?: boolean;
+  // plan only: told about every folder the sync would create
+  planFolder?: (fsPath: string, direction: TransferDirection) => void;
+}
 
 type ExternalTransferOption<T extends InternalTransferOption> = Pick<
   T,
@@ -35,6 +40,9 @@ interface SyncOption extends TransferOption {
 
   // make newest file to be present in both locations.
   bothDiretions?: boolean;
+
+  // when to show the Preview Sync list before running
+  preview?: 'always' | 'onDelete' | 'never';
 }
 
 interface BaseTransferHandleConfig {
@@ -70,6 +78,19 @@ function toHash<T, R = T>(items: T[], key: string, transform?: (a: T) => R): { [
   }, {});
 }
 
+// Save an open, unsaved editor for `fsPath` so its edits are what gets uploaded.
+// Resolves the new mtime, or `undefined` when nothing was saved.
+async function saveBeforeUpload(fsPath: string, fs: FileSystem): Promise<number | undefined> {
+  const document = getOpenTextDocuments().find(doc => doc.fileName === fsPath);
+  if (!document || document.isClosed || !document.isDirty) {
+    return undefined;
+  }
+  await document.save();
+  logger.info('save before upload.');
+  const stat = await fs.lstat(fsPath);
+  return stat.mtime;
+}
+
 async function transferFolder(
   config: TransferHandleConfig<TransferOption>,
   collect: (t: TransferTask) => void
@@ -81,10 +102,14 @@ async function transferFolder(
   }
 
   // Need this to make sure file can correct transfer
-  await targetFs.ensureDir(targetFsPath);
+  if (transferOption.dryRun) {
+    transferOption.planFolder?.(targetFsPath, config.transferDirection);
+  } else {
+    await targetFs.ensureDir(targetFsPath);
+  }
 
   // If dirPerm is configured, we chmod the remote directory after creation.
-  if(config.transferOption.dirPerm) {
+  if(config.transferOption.dirPerm && !transferOption.dryRun) {
     logger.info("chmod remote directory as configured by dirPerm, dirPerm is: ", config.transferOption.dirPerm)
     await targetFs.chmod(targetFsPath, parseInt(String(config.transferOption.dirPerm), 8))
   }
@@ -164,15 +189,13 @@ async function transferWithType(
         }
       }
       // <<< save before upload: start
-      if (config.transferDirection === TransferDirection.LOCAL_TO_REMOTE) {
-        const textDocuments = getOpenTextDocuments();
-        const document = textDocuments.find(doc => doc.fileName === config.srcFsPath);
-        if (document && !document.isClosed && document.isDirty) {
-          await document.save();
-          // Update mtime after file was saved
-          const stat = await config.srcFs.lstat(config.srcFsPath);
-          config.transferOption.mtime = stat.mtime;
-          logger.info('save before upload.');
+      if (
+        config.transferDirection === TransferDirection.LOCAL_TO_REMOTE &&
+        !config.transferOption.dryRun
+      ) {
+        const mtime = await saveBeforeUpload(config.srcFsPath, config.srcFs);
+        if (mtime !== undefined) {
+          config.transferOption.mtime = mtime;
         }
       }
       // save before upload: end >>>
@@ -290,6 +313,7 @@ async function _sync(
                   mode: to.mode, // prefer target mode
                   mtime: from.mtime,
                   atime: from.atime,
+                  syncAction: 'update',
                 },
               ]);
             }
@@ -321,6 +345,7 @@ async function _sync(
               fallbackMode: srcFile.mode,
               mtime: srcFile.mtime,
               atime: srcFile.atime,
+              syncAction: 'create',
             },
           ]);
           break;
@@ -350,6 +375,7 @@ async function _sync(
                   fallbackMode: file.mode,
                   mtime: file.mtime,
                   atime: file.atime,
+                  syncAction: 'create',
                 },
               ]);
               break;
@@ -377,16 +403,18 @@ async function _sync(
     }
 
     // side-effect
-    await Promise.all(
-      fileMissed.map(file =>
-        removeFile(file, targetFs, FileType.File, transferOption, transferDirection)
-      )
-    );
-    await Promise.all(
-      dirMissed.map(file =>
-        removeFile(file, targetFs, FileType.Directory, transferOption, transferDirection)
-      )
-    );
+    if (!transferOption.dryRun) {
+      await Promise.all(
+        fileMissed.map(file =>
+          removeFile(file, targetFs, FileType.File, transferOption, transferDirection)
+        )
+      );
+      await Promise.all(
+        dirMissed.map(file =>
+          removeFile(file, targetFs, FileType.Directory, transferOption, transferDirection)
+        )
+      );
+    }
 
     const transFilePromise = file2trans.map(([src, target, direction, option]) => {
       const isReversed = direction === altDirection;
@@ -413,6 +441,7 @@ async function _sync(
           srcFs: isReversed ? config.targetFs : config.srcFs,
           targetFs: isReversed ? config.srcFs : config.targetFs,
           transferDirection: direction,
+          transferOption: { ...transferOption, syncAction: 'create' },
           srcFsPath: src,
           targetFsPath: target,
         },
@@ -436,7 +465,9 @@ async function _sync(
   };
 
   // create dir here so we don't have to ensure it for children files.
-  await targetFs.ensureDir(targetFsPath);
+  if (!transferOption.dryRun) {
+    await targetFs.ensureDir(targetFsPath);
+  }
 
   const files = await Promise.all([
     srcFs.list(srcFsPath).catch(() => []),
@@ -470,4 +501,150 @@ export async function sync(
   const deleted: FileEntry[] = [];
   await _sync(config, collect, deleted);
   return deleted;
+}
+
+export interface SyncPlan {
+  transfers: TransferTask[];
+  // entries that exist only on the target and would be removed (`delete` option)
+  deletions: FileEntry[];
+  // new folders with nothing planned inside them; other new folders are
+  // created as parents of their transfers
+  folders: SyncPlanFolder[];
+  // the side deletions are applied to
+  deletionDirection: TransferDirection;
+}
+
+export interface SyncPlanFolder {
+  fsPath: string;
+  direction: TransferDirection;
+}
+
+export type SyncPlanItem =
+  | { kind: 'transfer'; task: TransferTask }
+  | { kind: 'delete'; entry: FileEntry }
+  | { kind: 'folder'; folder: SyncPlanFolder };
+
+export function syncPlanKey(item: SyncPlanItem): string {
+  switch (item.kind) {
+    case 'transfer':
+      return `${item.task.transferType}:${item.task.targetFsPath}`;
+    case 'delete':
+      return `delete:${item.entry.fspath}`;
+    case 'folder':
+      return `folder:${item.folder.direction}:${item.folder.fsPath}`;
+  }
+}
+
+export async function planSync(config: TransferHandleConfig<SyncOption>): Promise<SyncPlan> {
+  const transfers: TransferTask[] = [];
+  const deletions: FileEntry[] = [];
+  const newFolders: SyncPlanFolder[] = [];
+  const planFolder = (fsPath: string, direction: TransferDirection) =>
+    newFolders.push({ fsPath, direction });
+  await _sync(
+    { ...config, transferOption: { ...config.transferOption, dryRun: true, planFolder } },
+    t => transfers.push(t),
+    deletions
+  );
+
+  const pathResolver = config.targetFs.pathResolver;
+  const occupied = new Set<string>();
+  const markParents = (direction: TransferDirection, fsPath: string) => {
+    let dir = pathResolver.dirname(fsPath);
+    while (!occupied.has(`${direction}:${dir}`)) {
+      occupied.add(`${direction}:${dir}`);
+      const parent = pathResolver.dirname(dir);
+      if (parent === dir) {
+        break;
+      }
+      dir = parent;
+    }
+  };
+  transfers.forEach(t => markParents(t.transferType, t.targetFsPath));
+  newFolders.forEach(f => markParents(f.direction, f.fsPath));
+  const folders = newFolders.filter(f => !occupied.has(`${f.direction}:${f.fsPath}`));
+
+  return { transfers, deletions, folders, deletionDirection: config.transferDirection };
+}
+
+/**
+ * Apply the selected part of a plan built by `planSync`. Deletions run first,
+ * as in a direct sync. Parent folders are created here because the dry run
+ * skipped every `ensureDir`.
+ */
+export async function executeSyncPlan(
+  plan: SyncPlan,
+  keep: (key: string) => boolean,
+  config: TransferHandleConfig<SyncOption>,
+  collect: (t: TransferTask) => void
+) {
+  const { targetFs, transferOption } = config;
+  const option = { ...transferOption, dryRun: false };
+
+  const deletions = plan.deletions.filter(entry => keep(syncPlanKey({ kind: 'delete', entry })));
+  const isDir = (e: FileEntry) => e.type === FileType.Directory;
+  await Promise.all(
+    deletions
+      .filter(e => !isDir(e))
+      .map(e => removeFile(e.fspath, targetFs, e.type, option, plan.deletionDirection))
+  );
+  await Promise.all(
+    deletions
+      .filter(isDir)
+      .map(e => removeFile(e.fspath, targetFs, e.type, option, plan.deletionDirection))
+  );
+
+  const ensured = new Set<string>();
+  // Walk up to the sync root so every folder the dry run skipped is created,
+  // and only newly created folders get `dirPerm` (matching a direct sync).
+  const ensureFolder = async (direction: TransferDirection, folder: string) => {
+    const fs = direction === config.transferDirection ? config.targetFs : config.srcFs;
+    const root = direction === config.transferDirection ? config.targetFsPath : config.srcFsPath;
+    const chmodPerm =
+      transferOption.dirPerm && direction === TransferDirection.LOCAL_TO_REMOTE
+        ? parseInt(String(transferOption.dirPerm), 8)
+        : undefined;
+
+    const missing: string[] = [];
+    let dir = folder;
+    while (!ensured.has(`${direction}:${dir}`)) {
+      ensured.add(`${direction}:${dir}`);
+      missing.unshift(dir);
+      const parent = fs.pathResolver.dirname(dir);
+      if (dir === root || parent === dir || !dir.startsWith(root)) {
+        break;
+      }
+      dir = parent;
+    }
+    for (const d of missing) {
+      const exists = await fs.lstat(d).then(() => true, () => false);
+      if (exists) {
+        continue;
+      }
+      await fs.ensureDir(d);
+      if (chmodPerm !== undefined) {
+        await fs.chmod(d, chmodPerm);
+      }
+    }
+  };
+
+  const transfers = plan.transfers.filter(task => keep(syncPlanKey({ kind: 'transfer', task })));
+  for (const task of transfers) {
+    await ensureFolder(task.transferType, task.targetFileSystem.pathResolver.dirname(task.targetFsPath));
+  }
+  for (const folder of plan.folders) {
+    if (keep(syncPlanKey({ kind: 'folder', folder }))) {
+      await ensureFolder(folder.direction, folder.fsPath);
+    }
+  }
+  // The dry run skipped saving, so save only what is about to be uploaded.
+  for (const task of transfers) {
+    if (task.transferType === TransferDirection.LOCAL_TO_REMOTE) {
+      const mtime = await saveBeforeUpload(task.srcFsPath, task.srcFileSystem);
+      if (mtime !== undefined) {
+        task.updateMtime(mtime);
+      }
+    }
+  }
+  transfers.forEach(collect);
 }

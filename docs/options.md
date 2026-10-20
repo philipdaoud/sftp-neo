@@ -72,7 +72,8 @@ copy only the options needed by your setup.
     "delete": false,                        // When true, recursively delete destination-only items; ignored by bidirectional sync. Default: false.
     "skipCreate": false,                    // When true, do not create items missing on the receiving side. Default: false.
     "ignoreExisting": false,                // When true, skip shared items; shared directories are not traversed. Default: false.
-    "update": false                         // When true, copy existing files only from a strictly newer sending side. Default: false.
+    "update": false,                        // When true, copy existing files only from a strictly newer sending side. Default: false.
+    "preview": "onDelete"                   // "always", "onDelete", or "never": when to show Preview Sync first. Default: "onDelete".
   },
 
   "backup": {
@@ -103,6 +104,13 @@ copy only the options needed by your setup.
   "profiles": {}                            // Per-profile overrides. Default: none.
 }
 ```
+
+`syncOption.preview` controls **Preview Sync**, a checkable list of every
+upload, download, and deletion a sync is about to perform. With `"onDelete"`
+(the default) the list appears only when the sync would delete something, so
+ordinary syncs stay one click. `"always"` shows it for every sync; `"never"`
+restores the pre-3.6.0 behaviour. Unchecked items are skipped; dismissing the
+list cancels the sync and the `postSync` hook does not run.
 
 Sync detects changed existing files independently of `syncOption.update`: it
 compares file size and modification time at whole-second precision, without

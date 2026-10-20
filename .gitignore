@@ -53,3 +53,10 @@ bower_components
 .bower-cache
 .bower-registry
 .bower-tmp
+
+### AI files ###
+AGENT.md
+AGENTS.md
+CLAUDE.md
+PLANS.md
+PLAN.md
