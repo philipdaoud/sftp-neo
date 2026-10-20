@@ -37,6 +37,8 @@
 
 **See exactly what a sync will do before it touches anything.** `SFTP: Preview Sync` lists every upload, download, and deletion — grouped as new, changed, or deleted — and lets you uncheck anything before you hit Enter. Regular syncs now show the same list automatically whenever they would **delete** files, so a stray `syncOption.delete` can't wipe a server folder by surprise. Control it with `syncOption.preview` (`"always"`, `"onDelete"` — the default — or `"never"`).
 
+**Changed host keys no longer leave you stuck.** When a server is reinstalled or rebuilt, a warning now shows the stored and received fingerprints (OpenSSH `SHA256:` form) and lets you **Accept New Key** — no more editing `known_hosts.json` by hand. For disposable test servers, `"hostKeyChecking": "accept-new"` remembers unknown hosts without asking, while a changed key still always asks.
+
 ---
 
 ## 🎉 v3.5.0 — Secure by Default
