@@ -52,6 +52,7 @@ const configScheme = z.object({
     skipCreate: z.boolean().optional(),
     ignoreExisting: z.boolean().optional(),
     update: z.boolean().optional(),
+    preview: z.enum(['always', 'onDelete', 'never']).optional(),
   }).optional(),
   backup: z.object({
     enabled: z.boolean().optional(),

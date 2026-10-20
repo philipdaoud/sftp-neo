@@ -48,6 +48,7 @@ interface ServiceOption {
     skipCreate: boolean;
     ignoreExisting: boolean;
     update: boolean;
+    preview?: 'always' | 'onDelete' | 'never';
   };
   backup: BackupConfig;
   ignore: string[];

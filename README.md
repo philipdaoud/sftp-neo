@@ -33,7 +33,13 @@
 
 ---
 
-## 🎉 What's New in v3.5.0 — Secure by Default
+## 🎉 What's New in v3.6.0 — Preview Sync
+
+**See exactly what a sync will do before it touches anything.** `SFTP: Preview Sync` lists every upload, download, and deletion — grouped as new, changed, or deleted — and lets you uncheck anything before you hit Enter. Regular syncs now show the same list automatically whenever they would **delete** files, so a stray `syncOption.delete` can't wipe a server folder by surprise. Control it with `syncOption.preview` (`"always"`, `"onDelete"` — the default — or `"never"`).
+
+---
+
+## 🎉 v3.5.0 — Secure by Default
 
 `.vscode` — the folder that commonly holds `sftp.json` with your host, username, and sometimes a plaintext password — is now **always excluded from transfers**, regardless of your `ignore` option, and this can't be turned off from `sftp.json`. Bots actively scan the web for `/.vscode/sftp.json`.
 
@@ -91,6 +97,7 @@ Set `"remoteExplorer": { "enableDragAndDrop": true }` and drag items around the 
 | 🔍 **Remote Explorer Filter** | Live client-side filter for files and folders already shown in the sidebar |
 | ⬆️⬇️ **Upload / Download** | Single files, folders, or entire projects |
 | 🔄 **Sync** | Bi-directional or one-way directory sync |
+| 👀 **Preview Sync** | Review and untick every upload, download, and deletion before a sync runs |
 | ✏️ **Rename / Move / Delete** | Manage remote files in place — renames and moves are server-side, so nothing is re-uploaded |
 | 🖱️ **Drag to Move** | Reorganize the server by dragging inside the Remote Explorer (opt-in) |
 | 💾 **Upload on Save** | Auto-push changes as you code |
@@ -289,7 +296,8 @@ thing.
     "delete": false,
     "skipCreate": false,
     "ignoreExisting": false,
-    "update": false
+    "update": false,
+    "preview": "onDelete"
   },
 
   "backup": {

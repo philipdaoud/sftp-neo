@@ -2,7 +2,7 @@
 
 **Extension:** sftp-neo
 **Author of proposal:** Drafted with Claude, based on public repo description
-**Status:** Draft / RFC
+**Status:** Implemented in 3.6.0 (QuickPick UI; tree view not yet)
 
 ---
 

@@ -1,6 +1,16 @@
 import { refreshRemoteExplorer } from '../shared';
 import createFileHandler, { FileHandlerContext } from '../createFileHandler';
-import { transfer, sync, TransferOption, SyncOption, TransferDirection } from './transfer';
+import {
+  transfer,
+  sync,
+  planSync,
+  executeSyncPlan,
+  TransferOption,
+  SyncOption,
+  TransferDirection,
+} from './transfer';
+import { showSyncPreview } from './syncPreview';
+import { showInformationMessage } from '../../host';
 import { runHook } from '../../modules/hooks';
 import { remoteBackupsProvider } from '../../modules/remoteBackups';
 import { isConnectionError, withRetry } from '../../helper';
@@ -75,13 +85,98 @@ function createTransferHandle(direction: TransferDirection) {
   };
 }
 
+/**
+ * Run a sync, showing Preview Sync first when `option.preview` asks for it.
+ * Resolves `false` when the user dismissed the preview and nothing ran.
+ */
+async function runSync(
+  this: FileHandlerContext,
+  option: SyncOption,
+  direction: TransferDirection
+): Promise<boolean> {
+  const localFs = this.fileService.getLocalFileSystem();
+  const { localFsPath, remoteFsPath } = this.target;
+  const retryOption = {
+    maxAttempts: TRANSFER_RETRY_ATTEMPTS,
+    shouldRetry: isConnectionError,
+    onRetry: (err, attempt) => {
+      logger.info(`Connection lost during transfer (attempt ${attempt}/${TRANSFER_RETRY_ATTEMPTS - 1}). Reconnecting...`);
+      this.fileService.clearRemoteFileSystem(this.config);
+    },
+  };
+  const syncConfig = remoteFs =>
+    direction === TransferDirection.LOCAL_TO_REMOTE
+      ? {
+          srcFsPath: localFsPath,
+          srcFs: localFs,
+          targetFsPath: remoteFsPath,
+          targetFs: remoteFs,
+          transferOption: option,
+          transferDirection: direction,
+        }
+      : {
+          srcFsPath: remoteFsPath,
+          srcFs: remoteFs,
+          targetFsPath: localFsPath,
+          targetFs: localFs,
+          transferOption: option,
+          transferDirection: direction,
+        };
+
+  const preview = option.preview || 'never';
+  if (preview === 'never') {
+    await withRetry(async () => {
+      const remoteFs = await this.fileService.getRemoteFileSystem(this.config);
+      const scheduler = this.fileService.createTransferScheduler(this.config.concurrency);
+      await sync(syncConfig(remoteFs), t => scheduler.add(t));
+      await scheduler.run();
+    }, retryOption);
+    return true;
+  }
+
+  let planFs;
+  let plan;
+  await withRetry(async () => {
+    planFs = await this.fileService.getRemoteFileSystem(this.config);
+    plan = await planSync(syncConfig(planFs));
+  }, retryOption);
+
+  if (!plan.transfers.length && !plan.deletions.length && !plan.folders.length) {
+    if (preview === 'always') {
+      showInformationMessage('Everything is already in sync.');
+    }
+    return true;
+  }
+
+  let keep = (_key: string) => true;
+  if (preview === 'always' || plan.deletions.length) {
+    const keys = await showSyncPreview(plan, { localRoot: localFsPath, remoteRoot: remoteFsPath });
+    if (!keys) {
+      logger.info('Sync cancelled from Preview Sync.');
+      return false;
+    }
+    keep = key => keys.has(key);
+  }
+
+  await withRetry(async () => {
+    const remoteFs = await this.fileService.getRemoteFileSystem(this.config);
+    const scheduler = this.fileService.createTransferScheduler(this.config.concurrency);
+    const config = syncConfig(remoteFs);
+    // Planned tasks are bound to the connection they were planned on; after a
+    // reconnect, plan again and apply the same selection.
+    const current = remoteFs === planFs ? plan : await planSync(config);
+    await executeSyncPlan(current, keep, config, t => scheduler.add(t));
+    await scheduler.run();
+  }, retryOption);
+  return true;
+}
+
 const uploadHandle = createTransferHandle(TransferDirection.LOCAL_TO_REMOTE);
 const downloadHandle = createTransferHandle(TransferDirection.REMOTE_TO_LOCAL);
 
 export const sync2Remote = createFileHandler<SyncOption>({
   name: 'sync local ➞ remote',
   async handle(option) {
-    const localFs = this.fileService.getLocalFileSystem();
     const { localFsPath, remoteFsPath } = this.target;
     const hooks = this.config.hooks;
     const hookCtx = {
@@ -98,34 +193,11 @@ export const sync2Remote = createFileHandler<SyncOption>({
     option.filePerm = this.config.filePerm;
     option.dirPerm = this.config.dirPerm;
 
-    await withRetry(
-      async () => {
-        const remoteFs = await this.fileService.getRemoteFileSystem(this.config);
-        const scheduler = this.fileService.createTransferScheduler(this.config.concurrency);
-        await sync(
-          {
-            srcFsPath: localFsPath,
-            srcFs: localFs,
-            targetFsPath: remoteFsPath,
-            targetFs: remoteFs,
-            transferOption: option,
-            transferDirection: TransferDirection.LOCAL_TO_REMOTE,
-          },
-          t => scheduler.add(t)
-        );
-        await scheduler.run();
-
-        remoteBackupsProvider.refresh();
-      },
-      {
-        maxAttempts: TRANSFER_RETRY_ATTEMPTS,
-        shouldRetry: isConnectionError,
-        onRetry: (err, attempt) => {
-          logger.info(`Connection lost during transfer (attempt ${attempt}/${TRANSFER_RETRY_ATTEMPTS - 1}). Reconnecting...`);
-          this.fileService.clearRemoteFileSystem(this.config);
-        },
-      }
-    );
+    const ran = await runSync.call(this, option, TransferDirection.LOCAL_TO_REMOTE);
+    if (!ran) {
+      return;
+    }
+    remoteBackupsProvider.refresh();
 
     await runHook('postSync', hooks, hookCtx, workspacePath);
   },
@@ -142,6 +214,7 @@ export const sync2Remote = createFileHandler<SyncOption>({
       skipCreate: syncOption.skipCreate,
       ignoreExisting: syncOption.ignoreExisting,
       update: syncOption.update,
+      preview: syncOption.preview || 'onDelete',
       backup: config.backup,
       remotePath: config.remotePath,
       localBasePath: this.fileService.baseDir,
@@ -155,7 +228,6 @@ export const sync2Remote = createFileHandler<SyncOption>({
 export const sync2Local = createFileHandler<SyncOption>({
   name: 'sync remote ➞ local',
   async handle(option) {
-    const localFs = this.fileService.getLocalFileSystem();
     const { localFsPath, remoteFsPath } = this.target;
     const hooks = this.config.hooks;
     const hookCtx = {
@@ -168,32 +240,10 @@ export const sync2Local = createFileHandler<SyncOption>({
 
     await runHook('preSync', hooks, hookCtx, workspacePath);
 
-    await withRetry(
-      async () => {
-        const remoteFs = await this.fileService.getRemoteFileSystem(this.config);
-        const scheduler = this.fileService.createTransferScheduler(this.config.concurrency);
-        await sync(
-          {
-            srcFsPath: remoteFsPath,
-            srcFs: remoteFs,
-            targetFsPath: localFsPath,
-            targetFs: localFs,
-            transferOption: option,
-            transferDirection: TransferDirection.REMOTE_TO_LOCAL,
-          },
-          t => scheduler.add(t)
-        );
-        await scheduler.run();
-      },
-      {
-        maxAttempts: TRANSFER_RETRY_ATTEMPTS,
-        shouldRetry: isConnectionError,
-        onRetry: (err, attempt) => {
-          logger.info(`Connection lost during transfer (attempt ${attempt}/${TRANSFER_RETRY_ATTEMPTS - 1}). Reconnecting...`);
-          this.fileService.clearRemoteFileSystem(this.config);
-        },
-      }
-    );
+    const ran = await runSync.call(this, option, TransferDirection.REMOTE_TO_LOCAL);
+    if (!ran) {
+      return;
+    }
 
     await runHook('postSync', hooks, hookCtx, workspacePath);
   },
@@ -208,6 +258,7 @@ export const sync2Local = createFileHandler<SyncOption>({
       skipCreate: syncOption.skipCreate,
       ignoreExisting: syncOption.ignoreExisting,
       update: syncOption.update,
+      preview: syncOption.preview || 'onDelete',
     };
   },
 });
