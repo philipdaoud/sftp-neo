@@ -239,6 +239,40 @@ describe("validation config", () => {
       expect(error).not.toBe(null);
     });
 
+    test("hostKeyChecking validation", () => {
+      const config = {
+        host: 'host',
+        username: 'username',
+        protocol: 'sftp',
+        remotePath: '/',
+      };
+
+      for (const hostKeyChecking of ['strict', 'accept-new']) {
+        config.hostKeyChecking = hostKeyChecking;
+        expect(validateConfig(config)).toBe(null);
+      }
+
+      config.hostKeyChecking = 'off';
+      expect(validateConfig(config)).not.toBe(null);
+    });
+
+    test("syncOption.preview validation", () => {
+      const config = {
+        host: 'host',
+        username: 'username',
+        protocol: 'sftp',
+        remotePath: '/',
+      };
+
+      for (const preview of ['always', 'onDelete', 'never']) {
+        config.syncOption = { delete: true, preview };
+        expect(validateConfig(config)).toBe(null);
+      }
+
+      config.syncOption = { preview: 'sometimes' };
+      expect(validateConfig(config)).not.toBe(null);
+    });
+
     test("passphrase validation", () => {
       const config = {
         host: 'host',

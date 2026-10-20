@@ -1,0 +1,114 @@
+# Publishes SFTP Neo to the VS Code Marketplace and Open VSX.
+#
+# Release: bump "version" in package.json, add its CHANGELOG section, commit,
+# then push a matching tag:   git tag v3.6.0 && git push origin v3.6.0
+#
+# Run it by hand from the Actions tab to build and check the .vsix without
+# publishing (leave "publish" unticked).
+#
+# Needs two secrets on the "marketplace" environment
+# (Settings → Environments → marketplace):
+#   VSCE_PAT  Azure DevOps token, scope Marketplace → Manage, all organizations
+#   OVSX_PAT  open-vsx.org access token for the PhilipDaoud namespace
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish to both marketplaces (otherwise build and check only)
+        type: boolean
+        default: false
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Check tag matches package.json version
+        id: version
+        run: |
+          version=$(node -p "require('./package.json').version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [ "$GITHUB_REF_TYPE" = tag ] && [ "$GITHUB_REF_NAME" != "v$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $version"
+            exit 1
+          fi
+
+      - run: npx tsc --noEmit -p .
+      - run: npm run lint
+      - run: npm test
+
+      # vscode:prepublish runs the production webpack build.
+      - name: Package
+        run: npx --yes @vscode/vsce@3.9.2 package --out "sftp-neo-${{ steps.version.outputs.version }}.vsix"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vsix
+          path: sftp-neo-*.vsix
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    if: github.ref_type == 'tag' || inputs.publish
+    runs-on: ubuntu-latest
+    environment: marketplace
+    permissions:
+      contents: write
+    env:
+      VSIX: sftp-neo-${{ needs.build.outputs.version }}.vsix
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: vsix
+
+      # The same .vsix goes to both stores. --skip-duplicate makes a re-run
+      # safe if one store succeeded and the other failed.
+      - name: Publish to VS Code Marketplace
+        run: npx --yes @vscode/vsce@3.9.2 publish --packagePath "$VSIX" --skip-duplicate
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+      - name: Publish to Open VSX
+        run: npx --yes ovsx@1.2.0 publish "$VSIX" --skip-duplicate
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+
+      - name: Create GitHub release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          awk -v v="$VERSION" '
+            $0 ~ "^## " v "( |$)" { on = 1; next }
+            on && /^## / { exit }
+            on { print }
+          ' CHANGELOG.md > notes.md
+          gh release create "$GITHUB_REF_NAME" "$VSIX" --title "$GITHUB_REF_NAME" --notes-file notes.md

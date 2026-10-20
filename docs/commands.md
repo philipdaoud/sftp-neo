@@ -61,6 +61,9 @@ Download the entire folder the current file is located in.
 
 You can change the default behavior by [syncOption](https://github.com/philipdaoud/sftp-neo/wiki/Configuration#syncoption).
 
+## SFTP: Preview Sync
+Pick a direction (Local → Remote, Remote → Local, Both Directions), then review a checkable list of every file that would be created, changed, or deleted, grouped by action. Nothing is transferred until you press Enter; uncheck anything to skip it, or press Escape to cancel. Plain sync commands show the same list automatically when they would delete something — see [`syncOption.preview`](./options.md).
+
 ## SFTP: Sync Remote -> Local
 Same as `Sync Local -> Remote`, but in the opposite direction.
 

@@ -23,6 +23,7 @@ const configScheme = z.object({
   privateKeyPath: nullableString,
   passphrase: z.union([z.string(), z.literal(true)]).optional().nullable(),
   interactiveAuth: z.union([z.boolean(), z.array(z.string())]).optional(),
+  hostKeyChecking: z.enum(['strict', 'accept-new']).optional(),
   algorithms: z.any().optional(),
   sshConfigPath: z.string().optional(),
   sshCustomParams: z.string().optional(),
@@ -52,6 +53,7 @@ const configScheme = z.object({
     skipCreate: z.boolean().optional(),
     ignoreExisting: z.boolean().optional(),
     update: z.boolean().optional(),
+    preview: z.enum(['always', 'onDelete', 'never']).optional(),
   }).optional(),
   backup: z.object({
     enabled: z.boolean().optional(),

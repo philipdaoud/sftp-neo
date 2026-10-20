@@ -99,6 +99,17 @@
             "type": "boolean",
             "description": "Update the dest only if a newer version is on the src filesystem.",
             "default": true
+          },
+          "preview": {
+            "type": "string",
+            "enum": ["always", "onDelete", "never"],
+            "enumDescriptions": [
+              "Always show the Preview Sync list before a sync runs.",
+              "Show Preview Sync only when the sync would delete something.",
+              "Never preview; sync runs immediately (behaviour before 3.6.0)."
+            ],
+            "description": "When to show Preview Sync — a checkable list of every upload, download, and deletion — before a sync runs.",
+            "default": "onDelete"
           }
         }
       },
@@ -284,6 +295,16 @@
           }
         ],
         "description": "Keyboard interaction authentication mechanism. For example using Google Authentication."
+      },
+      "hostKeyChecking": {
+        "type": "string",
+        "enum": ["strict", "accept-new"],
+        "enumDescriptions": [
+          "Ask before trusting an unknown host key (default).",
+          "Trust and remember unknown host keys without asking, like OpenSSH's StrictHostKeyChecking accept-new. A changed key still asks."
+        ],
+        "description": "How unknown SSH host keys are handled. A host key that has changed always shows a warning dialog, whatever this is set to. Applies to every host in a hop chain.",
+        "default": "strict"
       },
       "algorithms": {
         "type": "object",

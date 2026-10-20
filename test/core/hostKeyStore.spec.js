@@ -13,7 +13,7 @@ jest.mock('fs-extra', () => {
   };
 });
 
-const { checkHostKey, fingerprint } = require('../../src/core/remote-client/hostKeyStore');
+const { checkHostKey, fingerprint, openSshFingerprint } = require('../../src/core/remote-client/hostKeyStore');
 const fseMock = require('fs-extra');
 
 describe('hostKeyStore workspace-scoped keys', () => {
@@ -150,5 +150,114 @@ describe('hostKeyStore workspace-scoped keys', () => {
       { [`${host}:${port}`]: fpA },
       { spaces: 2 }
     );
+  });
+
+  describe('changed key prompt', () => {
+    const ws = '/workspace/one';
+    const scoped = `${host}:${port}:${ws}`;
+
+    test('accepting a changed key replaces only this workspace entry', async () => {
+      fseMock.readJson.mockResolvedValue({
+        [scoped]: fpA,
+        [`${host}:${port}:/workspace/two`]: fpA,
+      });
+      const promptChanged = jest.fn(async () => 'accept');
+
+      const result = await checkHostKey(
+        host,
+        port,
+        fpB,
+        async () => { throw new Error('should not prompt as unknown'); },
+        ws,
+        { promptChanged }
+      );
+
+      expect(result).toBe(true);
+      expect(promptChanged).toHaveBeenCalledWith(fpA, fpB, host);
+      expect(fseMock.outputJson).toHaveBeenCalledWith(
+        STORE_PATH,
+        { [scoped]: fpB, [`${host}:${port}:/workspace/two`]: fpA },
+        { spaces: 2 }
+      );
+    });
+
+    test('cancelling a changed key refuses and keeps the stored key', async () => {
+      fseMock.readJson.mockResolvedValue({ [scoped]: fpA });
+
+      await expect(
+        checkHostKey(host, port, fpB, async () => 'accept', ws, {
+          promptChanged: async () => 'reject',
+        })
+      ).rejects.toThrow(/has CHANGED/);
+      expect(fseMock.outputJson).not.toHaveBeenCalled();
+    });
+
+    test('accept-new still prompts for a changed key', async () => {
+      fseMock.readJson.mockResolvedValue({ [scoped]: fpA });
+      const promptChanged = jest.fn(async () => 'reject');
+
+      await expect(
+        checkHostKey(host, port, fpB, async () => 'accept', ws, {
+          mode: 'accept-new',
+          promptChanged,
+        })
+      ).rejects.toThrow(/has CHANGED/);
+      expect(promptChanged).toHaveBeenCalledTimes(1);
+      expect(fseMock.outputJson).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('accept-new', () => {
+    const ws = '/workspace/one';
+
+    test('stores an unknown key without prompting', async () => {
+      fseMock.readJson.mockResolvedValue({});
+
+      const result = await checkHostKey(
+        host,
+        port,
+        fpA,
+        async () => { throw new Error('should not prompt'); },
+        ws,
+        { mode: 'accept-new' }
+      );
+
+      expect(result).toBe(true);
+      expect(fseMock.outputJson).toHaveBeenCalledWith(
+        STORE_PATH,
+        { [`${host}:${port}:${ws}`]: fpA },
+        { spaces: 2 }
+      );
+    });
+
+    test('treats a mismatching legacy entry as a changed key', async () => {
+      fseMock.readJson.mockResolvedValue({ [`${host}:${port}`]: fpA });
+      const promptChanged = jest.fn(async () => 'reject');
+
+      await expect(
+        checkHostKey(
+          host,
+          port,
+          fpB,
+          async () => { throw new Error('should not prompt as unknown'); },
+          ws,
+          { mode: 'accept-new', promptChanged }
+        )
+      ).rejects.toThrow(/has CHANGED/);
+      expect(promptChanged).toHaveBeenCalledWith(fpA, fpB, host);
+      expect(fseMock.outputJson).not.toHaveBeenCalled();
+    });
+  });
+});
+
+describe('openSshFingerprint', () => {
+  test('formats a hex sha256 like ssh-keygen -lf', () => {
+    const key = Buffer.from('host key bytes');
+    const expected = 'SHA256:' + require('crypto')
+      .createHash('sha256')
+      .update(key)
+      .digest('base64')
+      .replace(/=+$/, '');
+    expect(openSshFingerprint(fingerprint(key))).toBe(expected);
   });
 });

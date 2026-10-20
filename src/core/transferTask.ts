@@ -33,6 +33,8 @@ export interface TransferOption {
   backup?: BackupConfig;
   remotePath?: string;
   localBasePath?: string;
+  // set by a sync plan so the preview can label the task; not used when running
+  syncAction?: 'create' | 'update';
 }
 
 export default class TransferTask implements Task {
@@ -79,6 +81,23 @@ export default class TransferTask implements Task {
 
   get targetFsPath() {
     return this._targetFsPath;
+  }
+
+  get srcFileSystem() {
+    return this._srcFs;
+  }
+
+  get targetFileSystem() {
+    return this._targetFs;
+  }
+
+  // the source was saved after the task was planned
+  updateMtime(mtime: number) {
+    this._TransferOption.mtime = mtime;
+  }
+
+  get syncAction() {
+    return this._TransferOption.syncAction;
   }
 
   get transferType() {
