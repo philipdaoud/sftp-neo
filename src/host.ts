@@ -94,6 +94,12 @@ export function showWarningMessage(message: string, ...items: string[]): Thenabl
   return vscode.window.showWarningMessage(message, ...items);
 }
 
+// Modal, so it can't be dismissed by clicking elsewhere; Cancel is VS Code's default button.
+export async function showModalWarning(message: string, detail: string, confirmLabel: string) {
+  const result = await vscode.window.showWarningMessage(message, { modal: true, detail }, confirmLabel);
+  return result === confirmLabel;
+}
+
 export async function showConfirmMessage(
   message: string,
   confirmLabel: string = 'Yes',

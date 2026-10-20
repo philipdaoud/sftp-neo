@@ -42,6 +42,7 @@ copy only the options needed by your setup.
   "privateKeyPath": null,                   // Key path; may come from SSH config. Fallback: none.
   "passphrase": null,                       // Passphrase or true to prompt. Default: Secret Storage, then none.
   "interactiveAuth": false,                 // false, true, or answer array. Default: false.
+  "hostKeyChecking": "strict",              // "strict" or "accept-new". Default: "strict".
   "sshConfigPath": "~/.ssh/config",         // OpenSSH config file. Effective default: "~/.ssh/config".
   "sshCustomParams": "",                    // Extra terminal SSH arguments. Runtime default: none.
   "algorithms": {},                         // SSH algorithm overrides. Default: ssh2 selections.
@@ -277,6 +278,28 @@ A plaintext `password` triggers a security warning; suppress it with the
 
 Secret Storage and SSH config lookups apply to the **top-level host only** — see
 [SSH connection chain](#ssh-connection-chain).
+
+### `hostKeyChecking`
+
+SSH host keys are remembered per workspace in `~/.vscode-sftp/known_hosts.json`.
+
+- `"strict"` (default): connecting to an unknown host asks you to accept its
+  fingerprint first.
+- `"accept-new"`: unknown hosts are trusted and remembered without asking, like
+  OpenSSH's `StrictHostKeyChecking accept-new`. The accepted fingerprint is
+  logged to the SFTP output channel. Useful for disposable test servers; it can
+  be set in a profile so production stays `"strict"`.
+
+Either way, a host whose key has **changed** shows a modal warning with the
+stored and received fingerprints. **Accept New Key** replaces the stored key for
+this workspace and connects; **Cancel** refuses the connection. Accept only when
+you expect the change (server reinstalled or rebuilt) — otherwise someone may be
+intercepting the connection. Fingerprints use the OpenSSH `SHA256:` form, so you
+can compare them with `ssh-keygen -lf` on the server.
+
+There is deliberately no option to turn host-key verification off. The setting
+is read from the top-level config and applies to every host in a
+[hop chain](#ssh-connection-chain).
 
 ### `concurrency`
 

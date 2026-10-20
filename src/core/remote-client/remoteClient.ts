@@ -19,6 +19,7 @@ export interface ConnectOption {
   sock?: any;
   hop?: ConnectOption | ConnectOption[];
   limitOpenFilesOnRemote?: boolean | number;
+  hostKeyChecking?: 'strict' | 'accept-new';
 
   // connection keepalive (milliseconds)
   keepalive?: number;

@@ -1,3 +1,19 @@
+## 3.6.0 - 2026-09-27
+
+### Features
+
+* **Accept a changed SSH host key from the warning dialog:**
+  * When a server's host key changes (reinstall, migration, container rebuild), a modal warning now shows the stored and received fingerprints with **Accept New Key** and **Cancel**, instead of only an error that pointed at `~/.vscode-sftp/known_hosts.json`.
+  * Accepting replaces the stored key for this workspace only; Cancel refuses the connection as before.
+* **New Option — `hostKeyChecking` (`"strict"` | `"accept-new"`, default `"strict"`):**
+  * `"accept-new"` trusts and remembers unknown host keys without asking, like OpenSSH's `StrictHostKeyChecking accept-new`, and logs the accepted fingerprint. Handy for disposable test servers; set it in a profile to keep production strict.
+  * A changed key always shows the warning dialog, whatever the setting. There is deliberately no option to turn verification off.
+* Host-key fingerprints are now shown in the OpenSSH `SHA256:…` form, so they can be compared with `ssh-keygen -lf` output.
+
+### Fixes
+
+* **Host-key prompts no longer time out the connection:** the time spent deciding on a host-key dialog counted against `connectTimeout` (10 seconds by default), so a slow click failed with "Timed out while waiting for handshake". The timeout now pauses while the dialog is open.
+
 ## 3.5.0 - 2026-09-10
 
 ### Security

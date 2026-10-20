@@ -285,6 +285,16 @@
         ],
         "description": "Keyboard interaction authentication mechanism. For example using Google Authentication."
       },
+      "hostKeyChecking": {
+        "type": "string",
+        "enum": ["strict", "accept-new"],
+        "enumDescriptions": [
+          "Ask before trusting an unknown host key (default).",
+          "Trust and remember unknown host keys without asking, like OpenSSH's StrictHostKeyChecking accept-new. A changed key still asks."
+        ],
+        "description": "How unknown SSH host keys are handled. A host key that has changed always shows a warning dialog, whatever this is set to. Applies to every host in a hop chain.",
+        "default": "strict"
+      },
       "algorithms": {
         "type": "object",
         "description": "Explicit overrides for the default transport layer algorithms used for the connection.",

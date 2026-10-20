@@ -266,6 +266,23 @@ export default class SSHClient extends RemoteClient {
     }
 
     return new Promise<void>((resolve, reject) => {
+      // ssh2's readyTimeout keeps running while the host-key prompt waits on the
+      // user, so a slow click failed the connection. Time out here instead and
+      // pause while that prompt is open.
+      const readyTimeout = interactiveAuth
+        ? Math.max(60 * 1000, connectTimeout || 0)
+        : connectTimeout ?? 20 * 1000;
+      let readyTimer: NodeJS.Timeout | undefined;
+      const startReadyTimer = () => {
+        if (readyTimeout > 0) {
+          readyTimer = setTimeout(() => {
+            reject(new Error(`[${option.host}]: Timed out while waiting for handshake`));
+            client.destroy();
+          }, readyTimeout);
+        }
+      };
+      const stopReadyTimer = () => clearTimeout(readyTimer);
+
       if (interactiveAuth) {
         // A password loaded from Secret Storage (or provided in the config)
         // arrives in `option.password`. Use it to answer the first
@@ -333,29 +350,36 @@ export default class SSHClient extends RemoteClient {
 
       const hostVerifier = (key: Buffer, done: (result: boolean) => void) => {
         const fp = crypto.createHash('sha256').update(key).digest('hex');
+        stopReadyTimer();
         config.verifyHostKey(fp, option.host, option.port ?? 22)
-          .then(done)
+          .then(result => {
+            if (result) {
+              startReadyTimer();
+            }
+            done(result);
+          })
           .catch(err => {
             reject(new Error(`[${option.host}]: ${err.message}`));
             done(false);
           });
       };
 
+      startReadyTimer();
       client
         .on('ready', () => {
+          stopReadyTimer();
           this._connected = true;
           resolve();
         })
         .on('error', err => {
+          stopReadyTimer();
           reject(new Error(`[${option.host}]: ${err.message}`));
         })
         .connect({
           keepaliveInterval: this._resolveKeepalive(remoteOption.keepalive),
           keepaliveCountMax: 3,
-          readyTimeout: interactiveAuth
-            ? Math.max(60 * 1000, connectTimeout || 0)
-            : connectTimeout,
           ...option,
+          readyTimeout: 0,
           tryKeyboard: !!interactiveAuth,
           hostVerifier,
         });

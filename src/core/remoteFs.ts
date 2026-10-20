@@ -1,10 +1,10 @@
 import upath from './upath';
-import { promptForPassword, showConfirmMessage, showWarningMessage } from '../host';
+import { promptForPassword, showConfirmMessage, showModalWarning, showWarningMessage } from '../host';
 import logger from '../logger';
 import app from '../app';
 import { ConnectOption } from './remote-client/remoteClient';
 import { storeCredential } from '../modules/secrets';
-import { checkHostKey } from './remote-client/hostKeyStore';
+import { checkHostKey, openSshFingerprint } from './remote-client/hostKeyStore';
 import { setConnectionState, removeConnection } from '../modules/connectionHealth';
 import {
   FileSystem,
@@ -111,12 +111,26 @@ class KeepAliveRemoteFs {
     const verifyHostKey = async (fp: string, host: string, port: number): Promise<boolean> => {
       return checkHostKey(host, port, fp, async (fingerprint, h) => {
         const accepted = await showConfirmMessage(
-          `The SSH host key for ${h} is not recognized.\n\nFingerprint (SHA-256):\n${fingerprint}\n\nAccept and connect?`,
+          `The SSH host key for ${h} is not recognized.\n\nFingerprint:\n${openSshFingerprint(fingerprint)}\n\nAccept and connect?`,
           'Accept',
           'Reject'
         );
         return accepted ? 'accept' : 'reject';
-      }, option.workspace).catch(err => {
+      }, option.workspace, {
+        mode: option.hostKeyChecking,
+        promptChanged: async (stored, received, h) => {
+          const accepted = await showModalWarning(
+            `The SSH host key for ${h} has CHANGED.`,
+            `Stored:    ${openSshFingerprint(stored)}\n` +
+            `Received: ${openSshFingerprint(received)}\n\n` +
+            'This is expected after a server reinstall or rebuild. If you did not expect it, ' +
+            'someone may be intercepting the connection (man-in-the-middle attack): cancel and ' +
+            'verify the fingerprint with the server administrator.',
+            'Accept New Key'
+          );
+          return accepted ? 'accept' : 'reject';
+        },
+      }).catch(err => {
         showWarningMessage(err.message);
         return false;
       });

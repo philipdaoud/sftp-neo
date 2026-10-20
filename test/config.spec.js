@@ -239,6 +239,23 @@ describe("validation config", () => {
       expect(error).not.toBe(null);
     });
 
+    test("hostKeyChecking validation", () => {
+      const config = {
+        host: 'host',
+        username: 'username',
+        protocol: 'sftp',
+        remotePath: '/',
+      };
+
+      for (const hostKeyChecking of ['strict', 'accept-new']) {
+        config.hostKeyChecking = hostKeyChecking;
+        expect(validateConfig(config)).toBe(null);
+      }
+
+      config.hostKeyChecking = 'off';
+      expect(validateConfig(config)).not.toBe(null);
+    });
+
     test("passphrase validation", () => {
       const config = {
         host: 'host',

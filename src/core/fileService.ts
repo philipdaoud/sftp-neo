@@ -32,6 +32,7 @@ interface Host {
   password: string;
   remotePath: string;
   connectTimeout: number;
+  hostKeyChecking?: 'strict' | 'accept-new';
 }
 
 interface ServiceOption {
