@@ -496,7 +496,7 @@
           },
           "secureProtocol": {
             "type": "string",
-            "description": "Optional SSL method to use, default is \"SSLv23_method\". The possible values are listed as SSL_METHODS, use the function names as strings. For example, \"SSLv3_method\" to force SSL version 3."
+            "description": "Optional TLS method to use (OpenSSL method name). Usually unnecessary: Node defaults to TLS 1.2 or newer. Prefer setting \"minVersion\" (e.g. \"TLSv1.2\") over forcing a method. SSLv2/SSLv3 are not supported."
           },
           "secureOptions": {
             "type": "number",
