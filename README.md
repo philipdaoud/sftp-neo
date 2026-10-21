@@ -39,53 +39,6 @@
 
 **Changed host keys no longer leave you stuck.** When a server is reinstalled or rebuilt, a warning now shows the stored and received fingerprints (OpenSSH `SHA256:` form) and lets you **Accept New Key** — no more editing `known_hosts.json` by hand. For disposable test servers, `"hostKeyChecking": "accept-new"` remembers unknown hosts without asking, while a changed key still always asks.
 
----
-
-## 🎉 v3.5.0 — Secure by Default
-
-`.vscode` — the folder that commonly holds `sftp.json` with your host, username, and sometimes a plaintext password — is now **always excluded from transfers**, regardless of your `ignore` option, and this can't be turned off from `sftp.json`. Bots actively scan the web for `/.vscode/sftp.json`.
-
-`SFTP: Config` now pre-populates a sensible `ignore` list on newly generated configs — `.vscode`, `.git`, `.github`, `.DS_Store`, `Thumbs.db`, `src`, `.env`, `.env.*`, `AGENTS.md`, `CLAUDE.md`, `.claude`, `.cursor`, `*.log`, `*.tmp`, `*.bak` — fully editable, and existing `sftp.json` files are untouched.
-
----
-
-## 🎉 v3.4.0 — Rename, Move & Safer Deletes
-
-Manage remote files without switching to FileZilla or an SSH terminal.
-
-### ✏️ Rename & Move on the Server
-`SFTP: Rename Remote` renames or moves a file or folder **on the server** — a single request, no re-upload, however large the folder. Include a `/` in the new name to move it somewhere else.
-
-### 🖱️ Drag to Move
-Set `"remoteExplorer": { "enableDragAndDrop": true }` and drag items around the Remote Explorer to reorganize the server. Also a server-side rename, so nothing is transferred.
-
-### 🔁 Local Renames Follow Along
-`"watcher": { "autoRename": true }` turns a rename inside VS Code into a server-side rename instead of the old delete-and-re-upload, which used to leave the old folder orphaned.
-
-### 🗑️ Deletes You Can Undo
-`"backup": { "onDelete": true }` saves a copy of everything a delete removes, restorable from the **Backups** panel. Deleting a folder backs up its contents first, and the delete is aborted if any copy fails.
-
-`SFTP: Delete Remote` also moved out of hiding — it's now in the local file explorer context menu and the Command Palette, retitled so it can't be mistaken for a local delete.
-
-### 🔧 Fixes
-- `uploadOnSave` and `watcher.autoUpload` no longer upload the same file twice on a Ctrl+S — safe to run both.
-- Profiles can now override `watcher`, so auto-upload can be on for dev and off for prod. Switching profiles rebuilds the watcher immediately.
-- `SFTP: Upload Changed Files` now actually applies Git renames (it silently failed before), and reports failures instead of swallowing them.
-
-> All new options default to **off** — nothing changes until you opt in. See the [full option reference](#-every-option-with-defaults).
-
----
-
-## 🎉 Previous Releases
-
-| Version | Highlights |
-|---------|------------|
-| **v3.3.0** | `keepalive` for idle connections, automatic reconnect on dropped sessions, watcher respects `ignore` rules |
-| **v3.2.0** | [Remote Explorer Filter](./docs/commands.md#remote-explorer-filter) — live client-side filtering of the sidebar |
-| **v3.1.0** | Backups can be stored locally or on the server via `backup.location` |
-| **v3.0.5** | "Don't show again" on the plaintext-password warning, workspace-scoped SSH host keys |
-| **v3.0** | Automatic versioned backups before every upload, with a panel to browse and restore |
-
 > 📖 Full history in the [CHANGELOG](./CHANGELOG.md).
 
 ---
