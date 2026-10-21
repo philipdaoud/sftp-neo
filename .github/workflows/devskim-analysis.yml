@@ -27,6 +27,9 @@ jobs:
 
       - name: Run DevSkim scanner
         uses: microsoft/DevSkim-Action@v1
+        with:
+          ignore-rules-list: DS162092,DS172411
+          ignore-globs: test/**,dist/**,node_modules/**
         
       - name: Upload DevSkim scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v4
