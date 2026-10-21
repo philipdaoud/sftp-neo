@@ -496,7 +496,7 @@
           },
           "secureProtocol": {
             "type": "string",
-            "description": "Optional TLS method to use (OpenSSL method name). Usually unnecessary: Node defaults to TLS 1.2 or newer. Prefer setting \"minVersion\" (e.g. \"TLSv1.2\") over forcing a method. SSLv2/SSLv3 are not supported."
+            "description": "Optional TLS method to use (OpenSSL method name). Usually unnecessary: Node defaults to TLS 1.2 or newer. Prefer setting \"minVersion\" (e.g. \"TLSv1.2\") over forcing a method."
           },
           "secureOptions": {
             "type": "number",
