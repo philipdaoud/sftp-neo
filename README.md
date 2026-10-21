@@ -52,7 +52,7 @@
 | 🔍 **Remote Explorer Filter** | Live client-side filter for files and folders already shown in the sidebar |
 | ⬆️⬇️ **Upload / Download** | Single files, folders, or entire projects |
 | 🔄 **Sync** | Bi-directional or one-way directory sync |
-| 👀 **Preview Sync** | Review and untick every upload, download, and deletion before a sync runs |
+| 👀 **Preview Sync** | Review and untick every upload, download, and deletion; previews destructive syncs by default, with always/never options |
 | ✏️ **Rename / Move / Delete** | Manage remote files in place — renames and moves are server-side, so nothing is re-uploaded |
 | 🖱️ **Drag to Move** | Reorganize the server by dragging inside the Remote Explorer (opt-in) |
 | 💾 **Upload on Save** | Auto-push changes as you code |
@@ -62,9 +62,11 @@
 | 📂 **Multi-Context** | Sync different local folders to different servers |
 | 🔗 **SSH Hopping** | Jump through bastion hosts to reach internal servers |
 | 🖥️ **SSH Terminal** | Open an SSH connection straight from the sidebar |
-| 🛡️ **File Backups** | Automatic versioned backups before every upload with local or remote storage |
+| 🛡️ **File Backups** | Automatic versioned backups before uploads, and optionally before deletes, with local or remote storage |
 | 🔕 **Password Warning Toggle** | "Don't show again" on the plaintext-password security warning |
+| 🔐 **SSH Host-Key Protection** | Review and accept changed keys with SHA256 fingerprints; optionally trust unknown keys while changed keys always require confirmation |
 | 🖥️ **Per-Workspace Host Keys** | Independent SSH known-host entries per workspace for shared dev servers |
+| 🛡️ **Transfer Safety** | `.vscode` is always excluded; new configs include editable default ignore patterns for common sensitive and generated files |
 
 ---
 
@@ -72,7 +74,7 @@
 
 ### 1. Install
 
-Grab it from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=philipdaoud.sftp-neo) or install the `.vsix` from [Releases](https://github.com/philipdaoud/sftp-neo/releases).
+Grab it from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=philipdaoud.sftp-neo), the [Open VSX Registry](https://open-vsx.org/extension/PhilipDaoud/sftp-neo), or install the `.vsix` from [Releases](https://github.com/philipdaoud/sftp-neo/releases).
 
 ### 2. Configure
 
