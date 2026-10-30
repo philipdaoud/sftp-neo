@@ -1,5 +1,12 @@
 ## 3.6.1 - 2026-10-30
 
+### Features
+
+* **New Setting — `sftp.skipHostKeyVerification` ([#37](https://github.com/philipdaoud/sftp-neo/issues/37)):**
+  * A list of hosts whose SSH host key is accepted without any check, for disposable test servers rebuilt with a new key each time. No prompt, nothing stored in `known_hosts.json`, and a warning with the fingerprint is logged on each connection.
+  * Hostnames or IPs with optional `*`/`?` wildcards and `:port`, e.g. `*.lab.local` or `10.0.0.5:2222`. A bare `*` is ignored.
+  * User settings only (machine scope): workspace settings and `sftp.json` can't set it, so a cloned project can never turn verification off. Don't list production servers.
+
 ### Fixes
 
 * **SSH agent uses the configured key ([#40](https://github.com/philipdaoud/sftp-neo/issues/40)):**

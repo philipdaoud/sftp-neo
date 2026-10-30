@@ -327,9 +327,14 @@ you expect the change (server reinstalled or rebuilt) — otherwise someone may 
 intercepting the connection. Fingerprints use the OpenSSH `SHA256:` form, so you
 can compare them with `ssh-keygen -lf` on the server.
 
-There is deliberately no option to turn host-key verification off. The setting
-is read from the top-level config and applies to every host in a
-[hop chain](#ssh-connection-chain).
+`sftp.json` deliberately has no option to turn host-key verification off: it
+lives in the workspace and is often shared, so a cloned project must not be able
+to disable it. The setting is read from the top-level config and applies to
+every host in a [hop chain](#ssh-connection-chain).
+
+For disposable servers whose key changes on every rebuild, list them in the
+user setting [`sftp.skipHostKeyVerification`](./setting.md#skiphostkeyverification).
+Their key is then accepted without any check.
 
 ### `concurrency`
 

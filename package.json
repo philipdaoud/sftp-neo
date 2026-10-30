@@ -103,6 +103,15 @@
           "type": "boolean",
           "default": false,
           "description": "Suppress the security warning shown when a plaintext password is stored in sftp.json."
+        },
+        "sftp.skipHostKeyVerification": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "scope": "machine",
+          "markdownDescription": "**Insecure.** Hosts whose SSH host key is accepted without any check, for disposable test servers that are rebuilt often. Any key is accepted and nothing is stored in `known_hosts.json`. Never list production servers: a man-in-the-middle would go unnoticed.\n\nEntries are hostnames or IP addresses (not SSH config aliases), with optional `*`/`?` wildcards and `:port`, e.g. `staging.test`, `*.lab.local`, `10.0.0.5:2222`. A bare `*` is ignored. User settings only; workspace settings and `sftp.json` cannot set this."
         }
       }
     },

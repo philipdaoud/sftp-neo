@@ -4,6 +4,7 @@ const VENDOR_FOLDER = '.vscode';
 
 export const EXTENSION_NAME = 'sftp';
 export const SETTING_KEY_REMOTE = 'remotefs.remote';
+export const SETTING_SKIP_HOST_KEY_VERIFICATION = 'skipHostKeyVerification';
 
 export const REMOTE_SCHEME = 'remote';
 
