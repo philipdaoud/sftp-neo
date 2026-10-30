@@ -1,0 +1,27 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="base.css"><style>
+.card { width: 1280px; height: 470px; padding: 40px 150px; }
+.qp { background: #252526; border: 1px solid #3c3c3c; border-radius: 12px; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,.55); font-size: 17px; color: #ccc; }
+.head { padding: 14px 18px 6px; font-size: 14px; color: #aaa; }
+.input { margin: 6px 14px 10px; padding: 10px 14px; background: #3c3c3c; border: 1.5px solid var(--blue); border-radius: 6px; color: #eee; }
+.grp { padding: 8px 18px 4px; font-size: 13px; font-weight: 700; letter-spacing: .5px; display: flex; justify-content: space-between; border-top: 1px solid #333; }
+.row { padding: 6px 18px; display: flex; gap: 12px; align-items: center; }
+.row.sel { background: #04395e; }
+.cb { width: 18px; height: 18px; border-radius: 4px; border: 1.5px solid #888; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; }
+.cb.on { background: var(--blue); border-color: var(--blue); color: #fff; }
+.p { color: #888; margin-left: auto; font-size: 14px; }
+.new { color: var(--green); } .chg { color: var(--amber); } .del { color: var(--red); }
+.foot { padding: 12px 18px; font-size: 14px; color: #aaa; border-top: 1px solid #333; display: flex; justify-content: space-between; }
+.btn { background: var(--blue); color: #fff; padding: 6px 16px; border-radius: 5px; }
+</style></head><body><div class="card"><div class="qp">
+<div class="head">Preview Sync — 2 new · 2 changed · 1 deletion</div>
+<div class="input">Uncheck anything you want to skip, then press Enter to sync</div>
+<div class="grp new"><span>UPLOAD – NEW</span></div>
+<div class="row"><span class="cb on">✓</span><span class="new">＋</span> assets/img/hero.webp</div>
+<div class="row"><span class="cb on">✓</span><span class="new">＋</span> includes/mailer.php</div>
+<div class="grp chg"><span>UPLOAD – CHANGED</span></div>
+<div class="row sel"><span class="cb on">✓</span><span class="chg">●</span> index.php</div>
+<div class="row"><span class="cb on">✓</span><span class="chg">●</span> assets/css/style.css</div>
+<div class="grp del"><span>DELETE ON REMOTE</span></div>
+<div class="row"><span class="cb"></span><span class="del">🗑</span> old-landing.html<span class="p">unchecked — will be skipped</span></div>
+<div class="foot"><span>4 of 5 selected · Esc cancels and nothing is transferred</span><span class="btn">OK</span></div>
+</div></div></body></html>

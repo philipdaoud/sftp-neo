@@ -1,90 +1,200 @@
-- [Error: Failure](#error-failure)
-	- [Error: Failure - Solution One](#error-failure---solution-one)
-	- [Error: Failure - Solution Two](#error-failure---solution-two)
-- [Error: Connection closed](#error-connection-closed)
-- [Error: Clicking Upload Changed Files does not work](#error-clicking-upload-changed-files-does-not-work)
-- [ENFILE: file table overflow ...](#enfile-file-table-overflow-)
-	- [ENFILE: file table overflow ... - Solution for MacOS harsh limit](#enfile-file-table-overflow----solution-for-macos-harsh-limit)
-- [How do I upload content inside a folder, but not the folder itself?](#how-do-i-upload-content-inside-a-folder-but-not-the-folder-itself)
-- [How can I upload files as root?](#how-can-i-upload-files-as-root)
-- [Automatically sync both ways without user interaction](#automatically-sync-both-ways-without-user-interaction)
-- [Show dotfiles/hidden files in remote explorer](#show-dotfileshidden-files-in-remote-explorer)
+# ❓ FAQ
 
-## Error: Failure
+Answers to the questions and errors that come up most often. Before anything else, turn on the
+debug log: set **`sftp.debug`** to `true` in Settings, reload VS Code, repeat the problem, and
+open **View → Output → SFTP**. The log usually names the cause.
 
-The failure error message comes from the remote side and is more or less the default/generic error 
-message that sftp server sends when a syscall fails or something similar happens.
-To know what exactly is going wrong you could try to enable debug output for the sftp server 
-and then execute your transfers again and see what (if anything) shows up in the logs there.
+**🔌 Connecting**
+- [Too many authentication failures](#-too-many-authentication-failures)
+- [Timed out while waiting for handshake](#%EF%B8%8F-timed-out-while-waiting-for-handshake)
+- [Connection closed right after connecting](#-connection-closed-right-after-connecting)
+- [The SSH host key has CHANGED](#-the-ssh-host-key-has-changed)
+- [Where is my password stored, and how do I change it?](#-where-is-my-password-stored-and-how-do-i-change-it)
 
-### Error: Failure - Solution One
+**📦 Transferring files**
+- [Error: Failure](#%EF%B8%8F-error-failure)
+- [Permission denied, or how do I upload as root?](#-permission-denied-or-how-do-i-upload-as-root)
+- [Upload Changed Files does nothing](#%EF%B8%8F-upload-changed-files-does-nothing)
+- [Upload the contents of a folder, not the folder itself](#-upload-the-contents-of-a-folder-not-the-folder-itself)
+- [Upload changes made outside VS Code (Git, build tools)](#%EF%B8%8F-upload-changes-made-outside-vs-code-git-build-tools)
+- [ENFILE: file table overflow (macOS)](#-enfile-file-table-overflow-macos)
 
-Change `remotePath` to the actual path if it's a symlink.
+**🌐 Remote Explorer**
+- [Hidden files (dotfiles) are missing](#-hidden-files-dotfiles-are-missing)
 
-### Error: Failure - Solution Two
+---
 
-The problem could be that your server runs out of file descriptors.
-You should try to increase the file descriptors limit.
-If you don't have the permission to do this, set [limitOpenFilesOnRemote](https://github.com/philipdaoud/sftp-neo/wiki/Configuration#limitopenfilesonremote) option in your config.
+## 🔌 Connecting
 
-## Error: Connection closed
+### 🔑 Too many authentication failures
 
-The problem could be that the SFTP extension keeps closing the connection for those who use more legacy/old systems.
-You'll have to Explicitly override the default transport layer algorithms used for the connection to remove the new `"diffie-hellman-group-exchange-sha256"` algorithm that cause the problem from the `kex` section. Just add this in your `sftp.json` configuration file, which should make it work.
+Your SSH agent holds more keys than the server allows attempts for (`MaxAuthTries`, 6 by default),
+and the server gave up before the right key was tried.
+
+Tell SFTP Neo which key to use with `privateKeyPath` (or `IdentityFile` in `~/.ssh/config`), and set
+`identitiesOnly` (or `IdentitiesOnly yes`) so only that key is offered. The agent still signs, so no
+passphrase is needed:
+
+```json
+{
+	"agent": "\\\\.\\pipe\\openssh-ssh-agent",
+	"privateKeyPath": "~/.ssh/id_ed25519_lab",
+	"identitiesOnly": true
+}
+```
+
+The `agent` value above is for the Windows OpenSSH agent; on macOS and Linux use `"$SSH_AUTH_SOCK"`.
+Make sure the key is loaded: `ssh-add -l` should list it.
+See [`agent`, `privateKeyPath`, and `identitiesOnly`](docs/options.md#agent-privatekeypath-and-identitiesonly).
+
+### ⏱️ Timed out while waiting for handshake
+
+The server didn't complete the SSH handshake within `connectTimeout` (10 seconds by default).
+
+1. Check `host` and `port`. Can you reach the server with `ssh user@host -p port` from the same machine?
+2. A firewall, VPN, or slow network can delay the handshake. Raise the limit, for example
+   `"connectTimeout": 30000`.
+
+Time spent on a host-key prompt doesn't count against the timeout.
+
+### 🔌 Connection closed right after connecting
+
+Some older servers close the connection when they can't agree on an algorithm with the client.
+Usually the key exchange is the culprit. Override it in `sftp.json`:
+
 ```json
 {
 	"algorithms": {
 		"kex": [
-			"ecdh-sha2-nistp256", 
-			"ecdh-sha2-nistp384", 
+			"ecdh-sha2-nistp256",
+			"ecdh-sha2-nistp384",
 			"ecdh-sha2-nistp521"
-		],
-		"cipher": [
-			"aes128-gcm",
-			"aes128-gcm@openssh.com",
-			"aes256-gcm",
-			"aes256-gcm@openssh.com",
-			"aes128-cbc",
-			"aes192-cbc",
-			"aes256-cbc",
-			"aes128-ctr",
-			"aes192-ctr",
-			"aes256-ctr"
-		],
-		"serverHostKey": [
-			"ssh-rsa", 
-			"ssh-dss",
-			"ssh-ed25519",
-			"ecdsa-sha2-nistp256", 
-			"ecdsa-sha2-nistp384", 
-			"ecdsa-sha2-nistp521",
-			"rsa-sha2-256",
-			"rsa-sha2-512"
-		],
-		"hmac": [
-			"hmac-sha2-256", 
-			"hmac-sha2-512"
 		]
 	}
 }
 ```
 
-## Error: Clicking Upload Changed Files does not work
+`cipher`, `serverHostKey`, and `hmac` can be overridden the same way.
+See [SSH algorithm overrides](docs/options.md#ssh-algorithm-overrides).
 
-See [vscode-sftp issue #854](https://github.com/liximomo/vscode-sftp/issues/854).
+### 🧭 The SSH host key has CHANGED
 
-**@PaPa31** added a fix to make the 'Upload Changed Files' command visible and added a default keyboard shortcut to call it.
-<!-- **danieleiobbi** has a workaround to create a keyboard shortcut. -->
+SFTP Neo remembers each server's host key. When it changes, you see the stored and the received
+`SHA256:` fingerprints:
 
-![upload changed files keyboard shortcut](assets/faq/upload_changed_files_shortcut.png)
+- **Expected** (server reinstalled, rebuilt, or migrated)? Choose **Accept New Key**.
+- **Not expected?** Cancel, and check the fingerprint with the server's administrator
+  (`ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub` on the server). Someone may be intercepting
+  the connection.
 
-## ENFILE: file table overflow ...
+**Servers that are rebuilt all the time** (containers, VMs, staging):
 
-MacOS have a harsh limit on number of open files.
+- `"hostKeyChecking": "accept-new"` in `sftp.json` trusts unknown hosts without asking. A changed key still asks.
+- The user setting [`sftp.skipHostKeyVerification`](docs/setting.md#skiphostkeyverification) lists hosts whose key
+  isn't checked at all. It can only be set in your User settings, so a shared project can't turn it on.
+  Never list production servers.
 
-### ENFILE: file table overflow ... - Solution for MacOS harsh limit
+### 🔒 Where is my password stored, and how do I change it?
 
-Run those command:
+When you choose to save it, the password (or key passphrase) goes into your operating system's
+credential store through VS Code's Secret Storage: macOS Keychain, Windows Credential Manager, or
+libsecret on Linux. It is never written to `sftp.json`.
+
+To change or remove it, run **`SFTP: Delete Saved Password`**. You'll be asked again on the next connection.
+
+---
+
+## 📦 Transferring files
+
+### ⚠️ Error: Failure
+
+This generic message comes from the server: one of its system calls failed. The server's own SFTP
+log usually says why. Two common causes:
+
+- **`remotePath` is a symlink.** Set `remotePath` to the real directory it points to.
+- **The server ran out of file descriptors.** Ask for a higher open-files limit, or set
+  `"limitOpenFilesOnRemote": true` (or a number, minimum 127) so SFTP Neo keeps fewer files open
+  at once. Lowering `concurrency` also helps.
+
+### 🚫 Permission denied, or how do I upload as root?
+
+SFTP transfers always run as the user you log in as. There is no `sudo` for SFTP, so files that
+user can't write can't be uploaded. (`sshCustomParams` only changes the **Open SSH in Terminal**
+command; it doesn't affect transfers.)
+
+Pick one:
+
+- **Give your user write access** to the target folder, for example by adding it to the group that
+  owns the files: `sudo chgrp -R www-data /var/www/html && sudo chmod -R g+w /var/www/html`.
+- **Log in as the user that owns the files** (for example a deploy user), instead of root.
+- If new files need specific modes, set `filePerm` / `dirPerm` (for example `644` / `755`).
+
+### ⬆️ Upload Changed Files does nothing
+
+**`SFTP: Upload Changed Files`** (`Ctrl+Alt+U`) uploads the files **Git** reports as changed, so it needs:
+
+1. the built-in **Git** extension enabled,
+2. the workspace folder to be a Git repository with at least one commit, and
+3. at least one changed file (shown in the Source Control view).
+
+It's also in the **Source Control** view's toolbar and in the right-click menu of the *Changes* and
+*Staged Changes* groups. You can rebind the shortcut in **Keyboard Shortcuts**:
+
+![Upload Changed Files keyboard shortcut](assets/faq/upload_changed_files_shortcut.png)
+
+### 📂 Upload the contents of a folder, not the folder itself
+
+Set `context` to that folder. Files under it are mapped straight into `remotePath`, so
+`build/index.html` uploads to `/var/www/html/index.html`:
+
+```json
+{
+	"name": "My Server",
+	"host": "example.com",
+	"protocol": "sftp",
+	"username": "deploy",
+	"context": "./build",
+	"remotePath": "/var/www/html"
+}
+```
+
+Need several folders going to different places? `sftp.json` can hold an array of configs, each with
+its own `context`. See [`context` and multiple configurations](docs/options.md#context-and-multiple-configurations).
+
+### 👁️ Upload changes made outside VS Code (Git, build tools)
+
+`uploadOnSave` only reacts to saves inside VS Code. To also upload files changed by a Git checkout,
+a build step, or another tool, turn on the **watcher**:
+
+```json
+{
+	"name": "My Server",
+	"host": "example.com",
+	"protocol": "sftp",
+	"username": "deploy",
+	"remotePath": "/var/www/html",
+	"uploadOnSave": true,
+	"watcher": {
+		"files": "**/*",
+		"autoUpload": true,
+		"autoDelete": false
+	}
+}
+```
+
+- `uploadOnSave` and `watcher.autoUpload` are safe together: one save is uploaded once, not twice.
+- `autoDelete: true` also deletes on the server when a file disappears locally. It's **destructive**:
+  a branch switch can remove remote files, so leave it off unless you're sure.
+- The watcher only uploads. To bring server changes down, run **`SFTP: Sync Remote -> Local`**, or set
+  `"downloadOnOpen": true` to fetch each file when you open it.
+
+See [`uploadOnSave` with `watcher.autoUpload`](docs/options.md#uploadonsave-with-watcherautoupload) and
+[`watcher.autoDelete`](docs/options.md#watcherautodelete).
+
+### 🍎 ENFILE: file table overflow (macOS)
+
+macOS limits how many files can be open at once, and a large sync can hit that limit. Raise it:
+
 ```sh
 echo kern.maxfiles=65536 | sudo tee -a /etc/sysctl.conf
 echo kern.maxfilesperproc=65536 | sudo tee -a /etc/sysctl.conf
@@ -93,86 +203,34 @@ sudo sysctl -w kern.maxfilesperproc=65536
 ulimit -n 65536
 ```
 
-## How do I upload content inside a folder, but not the folder itself?
+Then restart VS Code. Lowering `concurrency` in `sftp.json` also reduces the number of open files.
 
-See [vscode-sftp issue #852](https://github.com/liximomo/vscode-sftp/issues/852).
+---
 
-As quoted from **raoul2000**, "as long as you set the `context` property to `./[path]` (e.g., `./build`), it
-will work."
+## 🌐 Remote Explorer
 
-Example configuration (where all JS and HTML files in `./build` will be copied to `/folder1/folder2/folder3`):
-```json
-{
-  "name": "My Server",
-  "host": "<host_ip_address>",
-  "protocol": "sftp",
-  "port": 22,
-  "username": "user1",
-  "remotePath": "/folder1/folder2/folder3",
-  "context": "./build",
-  "uploadOnSave": false,
-  "watcher": {
-    "files": "*.{js,html}",
-    "autoUpload": true,
-    "autoDelete": false
-  }
-}
-```
+### 👻 Hidden files (dotfiles) are missing
 
-## How can I upload files as root?
+**FTP with ProFTPD:** the server hides dotfiles from directory listings by default. Edit `proftpd.conf`.
+Depending on your installation, it's one of:
 
-See [vscode-sftp issue #559](https://github.com/liximomo/vscode-sftp/issues/559).
-
-**Yevhen-development** has a workaround, but it may not work for everyone.  In `sftp.json`, set the
-following:
-```json
-"sshCustomParams": "sudo su -;"
-```
-
-## Automatically sync both ways without user interaction
-
-See [vscode-sftp issue #136](https://github.com/philipdaoud/sftp-neo/issues/136).
-
-> *This can also be used with **GIT** this way when you're checking out a branch or reverting changes/commits, your server will also be updated.*
-
-```json
-{
-  "name": "My Server",
-  "host": "<host_ip_address>",
-  "protocol": "sftp",
-  "port": 22,
-  "username": "user1",
-  "remotePath": "/folder1/folder2/folder3",
-  "uploadOnSave": false, // Set to false if watcher `autoUpload` is set to true & `files` is set to "**/*".
-  "watcher": {
-    "files": "**/*",
-    "autoUpload": true,
-    "autoDelete": true
-  }
-  "syncOption": {
-    "delete": true // Delete extraneous files from destination directories.
-  },
-}
-```
-
-## Show dotfiles/hidden files in remote explorer
-
-### If using proftpd
-
-Please edit the config file `proftpd.conf`. Depending on your installation, the default location for this file can be one of those :
 - `/etc/proftpd.conf`
 - `/etc/proftpd/proftpd.conf`
 - `/usr/local/etc/proftpd.conf`
 - `/usr/local/etc/proftpd/proftpd.conf`
 
-Search for the `ListOptions` parameter and change it from `"-l"` to `"-la"`.
+Change `ListOptions` from `"-l"` to `"-la"`, then restart ProFTPD:
 
-It should look like this : 
 ```conf
-#Global settings
 <Global>
-[...]
-ListOptions 		"-la"
-[...]
+  ListOptions "-la"
 </Global>
 ```
+
+**Any protocol:** check `remoteExplorer.filesExclude` in `sftp.json`. Patterns listed there are hidden
+from the Remote Explorer on purpose.
+
+---
+
+Still stuck? [Open an issue](https://github.com/philipdaoud/sftp-neo/issues/new/choose) and include the
+SFTP output log (with `sftp.debug` on). Remove hostnames and usernames you don't want to share.

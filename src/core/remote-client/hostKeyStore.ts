@@ -37,7 +37,47 @@ export type HostKeyChecking = 'strict' | 'accept-new';
 
 export interface HostKeyCheckOptions {
   mode?: HostKeyChecking;
+  // Set only from the machine-scoped `sftp.skipHostKeyVerification` setting,
+  // never from sftp.json, so a cloned workspace can't turn verification off.
+  skipVerification?: boolean;
   promptChanged?: (stored: string, received: string, host: string) => Promise<HostKeyDecision>;
+}
+
+function parseHostPattern(pattern: string): { host: string; port?: number } {
+  const bracketed = /^\[(.+)\]:(\d+)$/.exec(pattern);
+  if (bracketed) {
+    return { host: bracketed[1], port: parseInt(bracketed[2], 10) };
+  }
+  // A single colon followed by digits is a port; more colons mean a bare IPv6 address.
+  const withPort = /^([^:]+):(\d+)$/.exec(pattern);
+  if (withPort) {
+    return { host: withPort[1], port: parseInt(withPort[2], 10) };
+  }
+  return { host: pattern };
+}
+
+// A pattern made only of wildcards would disable verification for every host,
+// which defeats the point of an explicit host list.
+export function isUnrestrictedHostPattern(pattern: string): boolean {
+  return /^[*?]*$/.test(parseHostPattern(pattern.trim()).host);
+}
+
+export function matchesHostPattern(host: string, port: number, patterns: string[]): boolean {
+  return patterns.some(raw => {
+    const pattern = typeof raw === 'string' ? raw.trim() : '';
+    if (!pattern || isUnrestrictedHostPattern(pattern)) {
+      return false;
+    }
+    const parsed = parseHostPattern(pattern);
+    if (parsed.port !== undefined && parsed.port !== port) {
+      return false;
+    }
+    const source = parsed.host
+      .split('')
+      .map(c => (c === '*' ? '.*' : c === '?' ? '.' : c.replace(/[.+^${}()|[\]\\]/g, '\\$&')))
+      .join('');
+    return new RegExp(`^${source}$`, 'i').test(host);
+  });
 }
 
 function makeHostKey(host: string, port: number, workspace?: string): string {
@@ -53,6 +93,15 @@ export async function checkHostKey(
   options: HostKeyCheckOptions = {}
 ): Promise<boolean> {
   const hostKey = makeHostKey(host, port, workspace);
+
+  if (options.skipVerification) {
+    logger.warn(
+      `SSH host key verification skipped for ${host}:${port} (sftp.skipHostKeyVerification). ` +
+      `Received ${openSshFingerprint(keyFingerprint)}; it was not checked or stored.`
+    );
+    return true;
+  }
+
   const legacyHostKey = makeHostKey(host, port);
   const known = await load();
 

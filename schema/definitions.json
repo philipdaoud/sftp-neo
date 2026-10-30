@@ -264,6 +264,11 @@
         "type": "string",
         "description": "Path to ssh-agent's UNIX socket for ssh-agent-based user authentication.  Windows users: set to 'pageant' for authenticating with Pageant or (actual) path to a cygwin \"UNIX socket\"."
       },
+      "identitiesOnly": {
+        "type": "boolean",
+        "description": "With \"agent\" and \"privateKeyPath\" both set, offer only the agent identity matching privateKeyPath, like OpenSSH's IdentitiesOnly. Read from IdentitiesOnly in the SSH config when not set here.",
+        "default": false
+      },
       "privateKeyPath": {
         "type": "string",
         "description": "Absolute path to user private key."

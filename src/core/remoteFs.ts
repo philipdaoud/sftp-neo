@@ -1,10 +1,16 @@
 import upath from './upath';
-import { promptForPassword, showConfirmMessage, showModalWarning, showWarningMessage } from '../host';
+import { getUserSetting, promptForPassword, showConfirmMessage, showModalWarning, showWarningMessage } from '../host';
 import logger from '../logger';
 import app from '../app';
 import { ConnectOption } from './remote-client/remoteClient';
 import { storeCredential } from '../modules/secrets';
-import { checkHostKey, openSshFingerprint } from './remote-client/hostKeyStore';
+import {
+  checkHostKey,
+  isUnrestrictedHostPattern,
+  matchesHostPattern,
+  openSshFingerprint,
+} from './remote-client/hostKeyStore';
+import { EXTENSION_NAME, SETTING_SKIP_HOST_KEY_VERIFICATION } from '../constants';
 import { setConnectionState, removeConnection } from '../modules/connectionHealth';
 import {
   FileSystem,
@@ -13,6 +19,25 @@ import {
   FTPFileSystem,
 } from './fs';
 import localFs from './localFs';
+
+// Only the user-level value counts. The setting is machine-scoped, and this
+// guards against a workspace value ever turning host-key verification off.
+export function getSkipHostKeyVerificationHosts(): string[] {
+  const value = getUserSetting(EXTENSION_NAME).inspect<string[]>(
+    SETTING_SKIP_HOST_KEY_VERIFICATION
+  )?.globalValue;
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  const unrestricted = value.filter(p => typeof p === 'string' && isUnrestrictedHostPattern(p));
+  if (unrestricted.length) {
+    logger.warn(
+      `Ignoring ${unrestricted.map(p => `"${p}"`).join(', ')} in sftp.skipHostKeyVerification: ` +
+      'list specific hosts, not a wildcard for every host.'
+    );
+  }
+  return value;
+}
 
 function hashOption(opiton) {
   return Object.keys(opiton)
@@ -118,6 +143,7 @@ class KeepAliveRemoteFs {
         return accepted ? 'accept' : 'reject';
       }, option.workspace, {
         mode: option.hostKeyChecking,
+        skipVerification: matchesHostPattern(host, port, getSkipHostKeyVerificationHosts()),
         promptChanged: async (stored, received, h) => {
           const accepted = await showModalWarning(
             `The SSH host key for ${h} has CHANGED.`,

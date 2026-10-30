@@ -13,7 +13,13 @@ jest.mock('fs-extra', () => {
   };
 });
 
-const { checkHostKey, fingerprint, openSshFingerprint } = require('../../src/core/remote-client/hostKeyStore');
+const {
+  checkHostKey,
+  fingerprint,
+  openSshFingerprint,
+  matchesHostPattern,
+  isUnrestrictedHostPattern,
+} = require('../../src/core/remote-client/hostKeyStore');
 const fseMock = require('fs-extra');
 
 describe('hostKeyStore workspace-scoped keys', () => {
@@ -247,6 +253,69 @@ describe('hostKeyStore workspace-scoped keys', () => {
       expect(promptChanged).toHaveBeenCalledWith(fpA, fpB, host);
       expect(fseMock.outputJson).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe('skipVerification', () => {
+  const host = 'staging.test';
+  const port = 22;
+  const ws = '/workspace/one';
+
+  beforeEach(() => {
+    fseMock.readJson.mockReset();
+    fseMock.outputJson.mockReset();
+  });
+
+  test.each([
+    ['unknown', {}],
+    ['changed', { [`${host}:${port}:${ws}`]: 'a'.repeat(64) }],
+  ])('accepts a %s key without prompting or touching the store', async (_label, stored) => {
+    fseMock.readJson.mockResolvedValue(stored);
+    const promptChanged = jest.fn();
+
+    const result = await checkHostKey(
+      host,
+      port,
+      'b'.repeat(64),
+      async () => { throw new Error('should not prompt'); },
+      ws,
+      { mode: 'strict', skipVerification: true, promptChanged }
+    );
+
+    expect(result).toBe(true);
+    expect(promptChanged).not.toHaveBeenCalled();
+    expect(fseMock.readJson).not.toHaveBeenCalled();
+    expect(fseMock.outputJson).not.toHaveBeenCalled();
+  });
+});
+
+describe('matchesHostPattern', () => {
+  test.each([
+    ['staging.test', 22, ['staging.test'], true],
+    ['STAGING.test', 22, ['staging.TEST'], true],
+    ['box1.lab.local', 22, ['*.lab.local'], true],
+    ['lab.local', 22, ['*.lab.local'], false],
+    ['web7.test', 22, ['web?.test'], true],
+    ['web17.test', 22, ['web?.test'], false],
+    ['10.0.0.5', 2222, ['10.0.0.5:2222'], true],
+    ['10.0.0.5', 22, ['10.0.0.5:2222'], false],
+    ['10.0.0.15', 22, ['10.0.0.1'], false],
+    ['stagingxtest', 22, ['staging.test'], false],
+    ['fe80::1', 22, ['fe80::1'], true],
+    ['fe80::1', 2222, ['[fe80::1]:22'], false],
+    ['prod.example.com', 22, ['staging.test'], false],
+    ['anything', 22, ['*'], false],
+    ['anything', 22, ['*:22'], false],
+    ['anything', 22, [], false],
+  ])('%s:%d against %j -> %s', (h, p, patterns, expected) => {
+    expect(matchesHostPattern(h, p, patterns)).toBe(expected);
+  });
+
+  test('flags wildcard-only patterns as unrestricted', () => {
+    expect(isUnrestrictedHostPattern('*')).toBe(true);
+    expect(isUnrestrictedHostPattern(' ** ')).toBe(true);
+    expect(isUnrestrictedHostPattern('*:2222')).toBe(true);
+    expect(isUnrestrictedHostPattern('*.test')).toBe(false);
   });
 });
 

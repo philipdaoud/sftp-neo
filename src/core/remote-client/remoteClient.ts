@@ -1,4 +1,5 @@
 import CustomError from '../customError';
+import { SelectiveAgent } from './agentIdentity';
 
 export interface ConnectOption {
   // common
@@ -15,7 +16,8 @@ export interface ConnectOption {
   privateKey?: string;
   passphrase?: string | boolean;
   interactiveAuth?: boolean | string[];
-  agent?: string;
+  agent?: string | SelectiveAgent;
+  identitiesOnly?: boolean;
   sock?: any;
   hop?: ConnectOption | ConnectOption[];
   limitOpenFilesOnRemote?: boolean | number;

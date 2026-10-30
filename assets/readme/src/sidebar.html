@@ -1,0 +1,61 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="base.css"><style>
+.card { width: 1280px; height: 720px; padding: 36px; }
+.win { height: 100%; border-radius: 16px; overflow: hidden; background: #1e1e1e; border: 1px solid #333; display: flex; flex-direction: column; box-shadow: 0 30px 80px rgba(0,0,0,.5); }
+.title { height: 38px; background: #2b2b2b; display: flex; align-items: center; padding: 0 16px; gap: 8px; font-size: 14px; color: #aaa; }
+.dot { width: 12px; height: 12px; border-radius: 50%; } .t { margin: 0 auto; }
+.main { flex: 1; display: flex; }
+.act { width: 52px; background: #252526; display: flex; flex-direction: column; align-items: center; padding-top: 14px; gap: 22px; font-size: 22px; opacity: .9; }
+.act .on { border-left: 2px solid var(--cyan); padding-left: 10px; margin-left: -12px; }
+.side { width: 380px; background: #1b1b1c; border-right: 1px solid #2d2d2d; font-size: 15px; color: #ccc; }
+.sec { padding: 10px 14px 4px; font-size: 12px; font-weight: 700; letter-spacing: .6px; color: #bbb; display: flex; justify-content: space-between; border-top: 1px solid #2d2d2d; }
+.sec:first-child { border-top: none; }
+.item { padding: 4px 14px; display: flex; gap: 8px; align-items: center; white-space: nowrap; }
+.item.sel { background: #04395e; }
+.i1 { padding-left: 30px; } .i2 { padding-left: 48px; }
+.bar { height: 6px; border-radius: 3px; background: #333; flex: 1; overflow: hidden; margin-left: 8px; } .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--cyan), var(--purple)); }
+.ok { color: var(--green); } .muted { color: #888; margin-left: auto; font-size: 13px; }
+.editor { flex: 1; display: flex; flex-direction: column; }
+.tabs { height: 36px; background: #252526; display: flex; } .tab { padding: 9px 18px; font-size: 14px; background: #1e1e1e; color: #fff; border-top: 2px solid var(--cyan); }
+.code { padding: 18px 24px; font-size: 16px; line-height: 1.75; color: #d4d4d4; }
+.k { color: #9cdcfe; } .s { color: #ce9178; } .n { color: #b5cea8; } .c { color: #6a9955; }
+.ln { color: #555; display: inline-block; width: 28px; }
+.status { height: 26px; background: linear-gradient(90deg, #0e7490, #6d28d9); font-size: 13px; color: #fff; display: flex; align-items: center; padding: 0 14px; gap: 18px; }
+</style></head><body><div class="card"><div class="win">
+<div class="title"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="t">my-site — Visual Studio Code</span></div>
+<div class="main">
+  <div class="act"><span>📄</span><span>🔍</span><span>🌿</span><span class="on">🖥️</span><span>🧩</span></div>
+  <div class="side">
+    <div class="sec"><span>EXPLORER · Production</span><span>⟳ ⏷</span></div>
+    <div class="item">⌄ 📁 /var/www/html</div>
+    <div class="item i1">› 📁 assets</div>
+    <div class="item i1">› 📁 includes</div>
+    <div class="item i1 sel">📄 index.php</div>
+    <div class="item i1">📄 contact.php</div>
+    <div class="item i1">📄 .htaccess</div>
+    <div class="sec"><span>TRANSFER QUEUE</span><span>✕</span></div>
+    <div class="item">⬆️ style.css<div class="bar"><i style="width:72%"></i></div></div>
+    <div class="item">⬆️ app.js<div class="bar"><i style="width:35%"></i></div></div>
+    <div class="item"><span class="ok">✔</span> index.php <span class="muted">uploaded</span></div>
+    <div class="sec"><span>BACKUPS · index.php</span><span>⟳</span></div>
+    <div class="item">🕒 today 14:32 <span class="muted">2.4 KB</span></div>
+    <div class="item">🕒 today 11:05 <span class="muted">2.3 KB</span></div>
+    <div class="item">🕒 yesterday 17:48 <span class="muted">2.3 KB</span></div>
+  </div>
+  <div class="editor">
+    <div class="tabs"><div class="tab">{} sftp.json</div></div>
+    <div class="code mono">
+<div><span class="ln">1</span>{</div>
+<div><span class="ln">2</span>&nbsp;&nbsp;<span class="k">"name"</span>: <span class="s">"Production"</span>,</div>
+<div><span class="ln">3</span>&nbsp;&nbsp;<span class="k">"host"</span>: <span class="s">"example.com"</span>,</div>
+<div><span class="ln">4</span>&nbsp;&nbsp;<span class="k">"protocol"</span>: <span class="s">"sftp"</span>,</div>
+<div><span class="ln">5</span>&nbsp;&nbsp;<span class="k">"username"</span>: <span class="s">"deploy"</span>,</div>
+<div><span class="ln">6</span>&nbsp;&nbsp;<span class="k">"privateKeyPath"</span>: <span class="s">"~/.ssh/id_ed25519"</span>,</div>
+<div><span class="ln">7</span>&nbsp;&nbsp;<span class="k">"remotePath"</span>: <span class="s">"/var/www/html"</span>,</div>
+<div><span class="ln">8</span>&nbsp;&nbsp;<span class="k">"uploadOnSave"</span>: <span class="n">true</span>,</div>
+<div><span class="ln">9</span>&nbsp;&nbsp;<span class="k">"backup"</span>: { <span class="k">"enabled"</span>: <span class="n">true</span>, <span class="k">"versions"</span>: <span class="n">5</span> }</div>
+<div><span class="ln">10</span>}</div>
+    </div>
+  </div>
+</div>
+<div class="status"><span>🖥️ SFTP: Production</span><span>⬆️ 2 transferring</span></div>
+</div></div></body></html>

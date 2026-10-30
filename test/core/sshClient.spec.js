@@ -1,4 +1,12 @@
 const { EventEmitter } = require('events');
+
+jest.mock('ssh2', () => ({
+  ...jest.requireActual('ssh2'),
+  createAgent: jest.fn(),
+}));
+
+const ssh2 = require('ssh2');
+const { SelectiveAgent } = require('../../src/core/remote-client/agentIdentity');
 const SSHClient = require('../../src/core/remote-client/sshClient').default;
 
 // Stands in for an ssh2 Client: records the connect options so a test can
@@ -90,5 +98,66 @@ describe('SSH connect timeout', () => {
     expect(client.destroy).not.toHaveBeenCalled();
     jest.advanceTimersByTime(1000);
     await expect(result).rejects.toThrow(/Timed out/);
+  });
+});
+
+describe('SSH key resolution with an agent', () => {
+  const { BaseAgent, utils } = jest.requireActual('ssh2');
+  const encrypted = utils.generateKeyPairSync('ed25519', {
+    passphrase: 'secret',
+    cipher: 'aes256-ctr',
+  });
+  const other = utils.generateKeyPairSync('ed25519');
+
+  class FakeAgent extends BaseAgent {
+    constructor(publicKeys) {
+      super();
+      this.keys = publicKeys.map(k => utils.parseKey(k));
+    }
+    getIdentities(cb) {
+      cb(null, this.keys);
+    }
+  }
+
+  function fakeFs(files) {
+    return {
+      readFile: jest.fn(async path => {
+        if (!(path in files)) {
+          throw new Error(`ENOENT ${path}`);
+        }
+        return Buffer.from(files[path]);
+      }),
+    };
+  }
+
+  function resolve(opt, files = { '/k': encrypted.private }) {
+    const ssh = new SSHClient({ host: 'example.test', port: 22 });
+    return ssh._resolveKeyAuth(opt, fakeFs(files)).then(() => opt);
+  }
+
+  test('uses the agent identity and skips the encrypted key file', async () => {
+    ssh2.createAgent.mockReturnValue(new FakeAgent([other.public, encrypted.public]));
+    const opt = await resolve({ host: 'h', agent: '/sock', privateKeyPath: '/k', identitiesOnly: true });
+    expect(opt.privateKey).toBeUndefined();
+    expect(opt.agent).toBeInstanceOf(SelectiveAgent);
+  });
+
+  test('explains when an encrypted key is not in the agent and has no passphrase', async () => {
+    ssh2.createAgent.mockReturnValue(new FakeAgent([other.public]));
+    await expect(
+      resolve({ host: 'h', agent: '/sock', privateKeyPath: '/k' })
+    ).rejects.toThrow(/not loaded in the SSH agent/);
+  });
+
+  test('falls back to the key file when the agent lacks it but a passphrase is set', async () => {
+    ssh2.createAgent.mockReturnValue(new FakeAgent([other.public]));
+    const opt = await resolve({ host: 'h', agent: '/sock', privateKeyPath: '/k', passphrase: 'secret' });
+    expect(opt.privateKey).toBe(encrypted.private);
+  });
+
+  test('loads the key file as before when no agent is set', async () => {
+    const opt = await resolve({ host: 'h', privateKeyPath: '/k' });
+    expect(opt.privateKey).toBe(encrypted.private);
+    expect(opt.agent).toBeUndefined();
   });
 });
