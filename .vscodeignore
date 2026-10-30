@@ -4,5 +4,6 @@
 !README.md
 !CHANGELOG.md
 !LICENSE
-!resources/**
+!resources/**/*.png
+!resources/**/*.svg
 !schema/**
