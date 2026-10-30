@@ -39,6 +39,7 @@ copy only the options needed by your setup.
   "keepalive": 30000,                       // SSH config value or 30000 ms fallback; 0 disables it.
 
   "agent": null,                            // ssh-agent socket or "pageant". Default: none.
+  "identitiesOnly": false,                  // Offer only the agent key matching privateKeyPath. Default: SSH config, then false.
   "privateKeyPath": null,                   // Key path; may come from SSH config. Fallback: none.
   "passphrase": null,                       // Passphrase or true to prompt. Default: Secret Storage, then none.
   "interactiveAuth": false,                 // false, true, or answer array. Default: false.
@@ -216,6 +217,7 @@ The final `hop` entry is the SFTP destination:
       "connectTimeout": 10000,              // Explicit example; no extension hop default.
       "keepalive": 30000,                   // Effective fallback: 30000 ms.
       "agent": null,                        // ssh-agent socket. Default: none.
+      "identitiesOnly": false,              // Offer only the agent key matching privateKeyPath. Default: false.
       "privateKeyPath": "/key",             // Read from the previous host in the chain.
       "passphrase": null,                   // No hop Secret Storage lookup. Default: none.
       "interactiveAuth": false,             // Effective default: false.
@@ -286,6 +288,26 @@ A plaintext `password` triggers a security warning; suppress it with the
 
 Secret Storage and SSH config lookups apply to the **top-level host only** — see
 [SSH connection chain](#ssh-connection-chain).
+
+### `agent`, `privateKeyPath`, and `identitiesOnly`
+
+With only `agent` set, every key the agent holds is offered in turn. Servers
+reject the login after `MaxAuthTries` attempts (6 by default), so an agent with
+many keys fails with "Too many authentication failures".
+
+Set `privateKeyPath` as well (or `IdentityFile` in the SSH config) to choose
+the key, as OpenSSH does:
+
+- The agent signs with the matching key, which is offered first. The key file
+  is not decrypted, so no `passphrase` is needed while the agent holds it.
+- `identitiesOnly: true` (or `IdentitiesOnly yes` in the SSH config) offers
+  only that key. A value in `sftp.json` overrides the SSH config.
+- If the agent does not hold the key, the key file is used instead. An
+  encrypted key then needs `passphrase`; otherwise the connection fails with a
+  hint to run `ssh-add`.
+
+The public key is read from the OpenSSH key header, or from `<privateKeyPath>.pub`
+for other key formats.
 
 ### `hostKeyChecking`
 

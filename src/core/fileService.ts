@@ -81,6 +81,7 @@ export interface BackupConfig {
 interface SftpOption {
   // sftp
   agent?: string;
+  identitiesOnly?: boolean;
   privateKeyPath?: string;
   passphrase: string | true;
   interactiveAuth: boolean | string[];
@@ -319,6 +320,7 @@ function mergeConfigWithExternalRefer(
     ['identityfile', 'privateKeyPath'],
     ['serveraliveinterval', 'keepalive'],
     ['connecttimeout', 'connTimeout'],
+    ['identitiesonly', 'identitiesOnly'],
   ]);
 
   (section as any).config.forEach(line => {
@@ -332,8 +334,14 @@ function mergeConfigWithExternalRefer(
     if (key !== undefined) {
       const value = getDirectiveValue(line as any);
       if (value !== undefined) {
+        // `null` in sftp.json means "not set", so the SSH config may fill it
+        if (copyed[key] === null) {
+          delete copyed[key];
+        }
         if (key === 'host') {
           copyed[key] = value;
+        } else if (key === 'identitiesOnly') {
+          setConfigValue(copyed, key, value.toLowerCase() === 'yes');
         } else if (key === 'keepalive') {
           // ServerAliveInterval in ssh_config is seconds; convert to milliseconds.
           const ms = parseInt(value, 10) * 1000;
@@ -385,9 +393,9 @@ function getCompleteConfig(
   const mergedConfig = mergeConfigWithExternalRefer(config);
 
   if (mergedConfig.agent && mergedConfig.privateKeyPath) {
-    logger.warn(
-      'Config Option Conflicted. You are specifing "agent" and "privateKey" at the same time, ' +
-        'the later will be ignored.'
+    logger.info(
+      '"agent" and "privateKeyPath" are both set: the agent signs with the matching key ' +
+        'and offers it first; the key file is only used if the agent does not hold it.'
     );
   }
 

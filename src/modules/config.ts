@@ -20,6 +20,7 @@ const configScheme = z.object({
   password: nullableString,
 
   agent: nullableString,
+  identitiesOnly: z.boolean().optional(),
   privateKeyPath: nullableString,
   passphrase: z.union([z.string(), z.literal(true)]).optional().nullable(),
   interactiveAuth: z.union([z.boolean(), z.array(z.string())]).optional(),

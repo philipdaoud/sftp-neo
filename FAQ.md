@@ -2,6 +2,7 @@
 	- [Error: Failure - Solution One](#error-failure---solution-one)
 	- [Error: Failure - Solution Two](#error-failure---solution-two)
 - [Error: Connection closed](#error-connection-closed)
+- [Error: Too many authentication failures](#error-too-many-authentication-failures)
 - [Error: Clicking Upload Changed Files does not work](#error-clicking-upload-changed-files-does-not-work)
 - [ENFILE: file table overflow ...](#enfile-file-table-overflow-)
 	- [ENFILE: file table overflow ... - Solution for MacOS harsh limit](#enfile-file-table-overflow----solution-for-macos-harsh-limit)
@@ -68,6 +69,22 @@ You'll have to Explicitly override the default transport layer algorithms used f
 	}
 }
 ```
+
+## Error: Too many authentication failures
+
+Your SSH agent holds more keys than the server allows attempts for (`MaxAuthTries`, 6 by default).
+Tell SFTP Neo which key to use with `privateKeyPath`, or `IdentityFile` in `~/.ssh/config`, and set `identitiesOnly`
+(or `IdentitiesOnly yes`) so only that key is offered. The agent still signs, so no passphrase is needed:
+
+```json
+{
+	"agent": "\\\\.\\pipe\\openssh-ssh-agent",
+	"privateKeyPath": "~/.ssh/id_ed25519_lab",
+	"identitiesOnly": true
+}
+```
+
+See [`agent`, `privateKeyPath`, and `identitiesOnly`](docs/options.md#agent-privatekeypath-and-identitiesonly).
 
 ## Error: Clicking Upload Changed Files does not work
 

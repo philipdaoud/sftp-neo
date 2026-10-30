@@ -1,11 +1,12 @@
 import * as crypto from 'crypto';
-import { Client } from 'ssh2';
+import { Client, createAgent, utils } from 'ssh2';
 import upath from '../upath';
 import RemoteClient, { ErrorCode, ConnectOption, Config } from './remoteClient';
 import localFs from '../localFs';
 import { FileSystem, RemoteFileSystem, SFTPFileSystem } from '../fs';
 import logger from '../../logger';
 import CustomError from '../customError';
+import { agentHasIdentity, getPublicKeyBlob, SelectiveAgent } from './agentIdentity';
 
 let MAX_OPEN_FD_NUM = 222;
 
@@ -58,7 +59,8 @@ export default class SSHClient extends RemoteClient {
       lastOption = connectOptions.pop()!;
 
       for (let index = 0; index < connectOptions.length; index++) {
-        const curOpt = connectOptions[index];
+        // copy so a resolved agent object never leaks back into the config
+        const curOpt = { ...connectOptions[index] };
         if (curOpt.port === undefined) {
           curOpt.port = 22;
         }
@@ -70,10 +72,7 @@ export default class SSHClient extends RemoteClient {
           });
         }
 
-        if (curOpt.privateKeyPath) {
-          const buffer = await fs.readFile(curOpt.privateKeyPath);
-          curOpt.privateKey = buffer.toString();
-        }
+        await this._resolveKeyAuth(curOpt, fs);
 
         const client = new SSHClient(curOpt);
         this.hoppingClients.push(client);
@@ -91,10 +90,7 @@ export default class SSHClient extends RemoteClient {
       });
     }
 
-    if (lastOption.privateKeyPath) {
-      const buffer = await fs.readFile(lastOption.privateKeyPath);
-      lastOption.privateKey = buffer.toString();
-    }
+    await this._resolveKeyAuth(lastOption, fs);
 
     await this._connectSSHClient(this._client, { ...lastOption, sock }, config);
     this.sftp = await this._getSftp(this._client);
@@ -105,6 +101,58 @@ export default class SSHClient extends RemoteClient {
       }
       this._limitSftpFileDescriptor();
     }
+  }
+
+  // With an agent, privateKeyPath selects which agent identity to offer, as
+  // OpenSSH does with IdentityFile. The key file is only used for signing when
+  // the agent doesn't hold it, so an encrypted key needs no passphrase here.
+  private async _resolveKeyAuth(
+    opt: ConnectOption,
+    fs: FileSystem | RemoteFileSystem
+  ): Promise<void> {
+    if (!opt.privateKeyPath) {
+      return;
+    }
+
+    const keyData = (await fs.readFile(opt.privateKeyPath)).toString();
+    if (typeof opt.agent === 'string' && opt.agent.length > 0) {
+      let pubKeyData: string | undefined;
+      try {
+        pubKeyData = (await fs.readFile(`${opt.privateKeyPath}.pub`)).toString();
+      } catch {
+        pubKeyData = undefined;
+      }
+
+      const publicKey = getPublicKeyBlob(keyData, pubKeyData);
+      if (!publicKey) {
+        logger.warn(
+          `[${opt.host}]: can't read the public key of ${opt.privateKeyPath}; ` +
+            'all SSH agent identities will be offered'
+        );
+      } else {
+        const agent = createAgent(opt.agent);
+        let held = false;
+        try {
+          held = await agentHasIdentity(agent, publicKey);
+        } catch (error) {
+          logger.warn(`[${opt.host}]: can't list SSH agent identities: ${error.message}`);
+        }
+        opt.agent = new SelectiveAgent(agent, publicKey, opt.identitiesOnly === true);
+        if (held) {
+          return;
+        }
+      }
+
+      const parsed = utils.parseKey(keyData);
+      if (!opt.passphrase && parsed instanceof Error && /passphrase/i.test(parsed.message)) {
+        throw new Error(
+          `[${opt.host}]: ${opt.privateKeyPath} is not loaded in the SSH agent and is encrypted. ` +
+            'Add it with `ssh-add`, or set "passphrase".'
+        );
+      }
+    }
+
+    opt.privateKey = keyData;
   }
 
   // connect1(readline): Promise<void> {

@@ -284,3 +284,43 @@ describe('FileService .vscode safeguard', () => {
     expect(ignore('/tmp/index.js')).toBe(false);
   });
 });
+
+describe('FileService SSH config IdentitiesOnly', () => {
+  const app = require('../../src/app').default;
+  const sshConfigPath = '/fake/ssh_config';
+
+  function configFor(overrides = {}) {
+    app.fsCache.set(
+      sshConfigPath,
+      [
+        'Host lab-sftp',
+        '  HostName example.host.com',
+        '  IdentityFile /keys/id_ed25519_lab',
+        '  IdentitiesOnly yes',
+      ].join('\n')
+    );
+    const service = new FileService('/tmp', '/tmp', createConfig({
+      host: 'lab-sftp',
+      sshConfigPath,
+      privateKeyPath: undefined,
+      agent: '/agent.sock',
+      ...overrides,
+    }));
+    return service.getConfig();
+  }
+
+  test('reads IdentitiesOnly and IdentityFile from the SSH config', () => {
+    const config = configFor();
+    expect(config.host).toBe('example.host.com');
+    expect(config.identitiesOnly).toBe(true);
+    expect(config.privateKeyPath).toBe('/keys/id_ed25519_lab');
+  });
+
+  test('fills a null privateKeyPath from IdentityFile', () => {
+    expect(configFor({ privateKeyPath: null }).privateKeyPath).toBe('/keys/id_ed25519_lab');
+  });
+
+  test('lets sftp.json override IdentitiesOnly', () => {
+    expect(configFor({ identitiesOnly: false }).identitiesOnly).toBe(false);
+  });
+});

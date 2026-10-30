@@ -1,3 +1,15 @@
+## 3.6.1 - 2026-10-30
+
+### Fixes
+
+* **SSH agent uses the configured key ([#40](https://github.com/philipdaoud/sftp-neo/issues/40)):**
+  * With `agent` and `privateKeyPath` (or `IdentityFile` from the SSH config) both set, the agent now signs with the matching key and offers it first, like OpenSSH. Before, every agent key was tried in turn, and servers rejected agents holding many keys with "Too many authentication failures".
+  * An encrypted key held by the agent no longer needs a `passphrase`; previously the connection failed with "Cannot parse privateKey: Encrypted private OpenSSH key detected, but no passphrase given".
+  * If the agent doesn't hold the key and it is encrypted with no passphrase, the error now says to add it with `ssh-add` or set `passphrase`.
+* **New Option — `identitiesOnly` (default `false`):** offers only the agent key matching `privateKeyPath`. `IdentitiesOnly yes` in the SSH config is now honoured too.
+* `"privateKeyPath": null` (and other `null` values) no longer blocks the matching value from the SSH config, such as `IdentityFile`.
+* Removed the misleading warning that `privateKeyPath` is ignored when `agent` is set.
+
 ## 3.6.0 - 2026-10-20
 
 ### Features
