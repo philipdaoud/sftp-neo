@@ -1,90 +1,61 @@
-<div align="center">
+<p align="center">
+  <img src="assets/readme/banner.png" alt="SFTP Neo — edit locally, ship to your server, never leave VS Code" width="100%">
+</p>
 
-# 🚀 SFTP Neo
+<p align="center">
+  <a href="https://marketplace.visualstudio.com/items?itemName=philipdaoud.sftp-neo"><img src="https://vsmarketplacebadges.dev/version/philipdaoud.sftp-neo.png?style=flat-square&label=Marketplace&color=007ACC&logo=visualstudiocode" alt="VS Code Marketplace"></a>
+  <a href="https://open-vsx.org/extension/PhilipDaoud/sftp-neo"><img src="https://img.shields.io/badge/Open%20VSX-sftp--neo-45B39D?style=flat-square&logo=eclipseide" alt="Open VSX"></a>
+  <a href="https://github.com/philipdaoud/sftp-neo/releases"><img src="https://img.shields.io/github/v/release/philipdaoud/sftp-neo?style=flat-square&logo=github&label=Release" alt="GitHub release"></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/github/license/philipdaoud/sftp-neo?style=flat-square&color=green" alt="MIT license"></a>
+</p>
 
-**Sync your code to any server without leaving VS Code.**
+<p align="center">
+  <b>SFTP Neo</b> keeps a local folder and a remote server in sync over <b>SFTP</b>, <b>FTP</b>, or <b>FTPS</b>.<br>
+  Upload on save, browse the server in the sidebar, preview syncs before they run, and roll back with automatic backups.
+</p>
 
-🔒 **More Secure** · 📦 **Updated Libraries** · ⭐ **More Features**
-
-[![VS Code Marketplace](https://vsmarketplacebadges.dev/version/philipdaoud.sftp-neo.png?style=flat-square&label=Marketplace&color=007ACC&logo=visualstudiocode)](https://marketplace.visualstudio.com/items?itemName=philipdaoud.sftp-neo)
-[![Open VSX](https://img.shields.io/badge/Open%20VSX-PhilipDaoud.sftp--neo-45B39D?style=flat-square&logo=eclipseide)](https://open-vsx.org/extension/PhilipDaoud/sftp-neo)
-[![GitHub Repo](https://img.shields.io/badge/Releases-GitHub-181717?style=flat-square&logo=github)](https://github.com/philipdaoud/sftp-neo/releases)
-[![License](https://img.shields.io/github/license/philipdaoud/sftp-neo?style=flat-square&color=green)](./LICENSE)
-
-</div>
-
----
-
-> **Forked & Modernized** from [Natizyskunk/vscode-sftp](https://github.com/Natizyskunk/vscode-sftp), originally based on the abandoned [liximomo/vscode-sftp](https://github.com/liximomo/vscode-sftp). Updated dependencies, new features, and full compatibility with the latest VS Code APIs.
-
----
-
-
-## 📑 Quick Links
-
-<div align="center">
-
-### ✨ [Features](#-features) &emsp;·&emsp; ⚡ [Quick Start](#-quick-start) &emsp;·&emsp; 🔧 [Config Examples](#-config-examples) &emsp;·&emsp; 📖 [Configuration](./docs/configuration.md) 
-### 🔐 [Security](#-security) &emsp;·&emsp; 🔑 [SSH Authentication](#-ssh-authentication) &emsp;·&emsp; 🐛 [Debug](#-debug) &emsp;·&emsp; ❓ [FAQ](./FAQ.md)
-
-</div>
-
-
+<p align="center">
+  <a href="#-quick-start">⚡ Quick start</a> ·
+  <a href="#%EF%B8%8F-everyday-commands">⌨️ Commands</a> ·
+  <a href="#-common-setups">🧩 Setups</a> ·
+  <a href="#-security">🔐 Security</a> ·
+  <a href="#-troubleshooting">🩺 Troubleshooting</a> ·
+  <a href="#-documentation">📖 Docs</a>
+</p>
 
 ---
-
-## 🎉 What's New in v3.6.0 — Preview Sync
-
-**See exactly what a sync will do before it touches anything.** `SFTP: Preview Sync` lists every upload, download, and deletion — grouped as new, changed, or deleted — and lets you uncheck anything before you hit Enter. Regular syncs now show the same list automatically whenever they would **delete** files, so a stray `syncOption.delete` can't wipe a server folder by surprise. Control it with `syncOption.preview` (`"always"`, `"onDelete"` — the default — or `"never"`).
-
-**Changed host keys no longer leave you stuck.** When a server is reinstalled or rebuilt, a warning now shows the stored and received fingerprints (OpenSSH `SHA256:` form) and lets you **Accept New Key** — no more editing `known_hosts.json` by hand. For disposable test servers, `"hostKeyChecking": "accept-new"` remembers unknown hosts without asking, while a changed key still always asks.
-
-> 📖 Full history in the [CHANGELOG](./CHANGELOG.md).
-
----
-
 
 ## ✨ Features
 
-| Feature | Description |
-|---------|-------------|
-| 🌐 **Remote Explorer** | Browse & manage remote files like a local filesystem |
-| 🔍 **Remote Explorer Filter** | Live client-side filter for files and folders already shown in the sidebar |
-| ⬆️⬇️ **Upload / Download** | Single files, folders, or entire projects |
-| 🔄 **Sync** | Bi-directional or one-way directory sync |
-| 👀 **Preview Sync** | Review and untick every upload, download, and deletion; previews destructive syncs by default, with always/never options |
-| ✏️ **Rename / Move / Delete** | Manage remote files in place — renames and moves are server-side, so nothing is re-uploaded |
-| 🖱️ **Drag to Move** | Reorganize the server by dragging inside the Remote Explorer (opt-in) |
-| 💾 **Upload on Save** | Auto-push changes as you code |
-| 👁️ **File Watcher** | Auto-upload on external file changes — safe to combine with Upload on Save |
-| 🎭 **Profiles** | Switch between dev / staging / prod in one click |
-| 🔒 **Secure Storage** | Passwords saved in your OS keychain — never in `sftp.json` |
-| 📂 **Multi-Context** | Sync different local folders to different servers |
-| 🔗 **SSH Hopping** | Jump through bastion hosts to reach internal servers |
-| 🖥️ **SSH Terminal** | Open an SSH connection straight from the sidebar |
-| 🛡️ **File Backups** | Automatic versioned backups before uploads, and optionally before deletes, with local or remote storage |
-| 🔕 **Password Warning Toggle** | "Don't show again" on the plaintext-password security warning |
-| 🔐 **SSH Host-Key Protection** | Review and accept changed keys with SHA256 fingerprints; optionally trust unknown keys while changed keys always require confirmation |
-| 🖥️ **Per-Workspace Host Keys** | Independent SSH known-host entries per workspace for shared dev servers |
-| 🛡️ **Transfer Safety** | `.vscode` is always excluded; new configs include editable default ignore patterns for common sensitive and generated files |
+|   |   |
+|---|---|
+| 💾 **Upload on save** — every save goes straight to the server | 🌐 **Remote Explorer** — browse, open, rename, move and delete remote files |
+| 🔄 **Sync** — local → remote, remote → local, or both ways | 👀 **Preview Sync** — review and untick every change before it runs |
+| 🛡️ **Backups** — versioned copies before anything is overwritten | 📊 **Transfer Queue** — live progress, cancel anything in flight |
+| 🎭 **Profiles** — switch between dev, staging and production | 📂 **Multiple folders** — send different folders to different servers |
+| 🔑 **SSH keys & agents** — keys, ssh-agent, Pageant, `~/.ssh/config` | 🔗 **Jump hosts** — reach internal servers through a bastion |
+| 🔒 **OS keychain** — passwords never stored in `sftp.json` | 🧭 **Host-key checks** — SHA256 fingerprints, per-workspace trust |
+
+<p align="center">
+  <img src="assets/readme/how-it-works.png" alt="Your workspace and your server, kept in step by upload on save, sync with preview, download and diff, and backups" width="100%">
+</p>
 
 ---
 
-## ⚡ Quick Start
+## ⚡ Quick start
 
-### 1. Install
+### 1️⃣ Install
 
-Grab it from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=philipdaoud.sftp-neo), the [Open VSX Registry](https://open-vsx.org/extension/PhilipDaoud/sftp-neo), or install the `.vsix` from [Releases](https://github.com/philipdaoud/sftp-neo/releases).
+Install **SFTP Neo** from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=philipdaoud.sftp-neo) or [Open VSX](https://open-vsx.org/extension/PhilipDaoud/sftp-neo), or search for `sftp-neo` in the Extensions view (`Ctrl+Shift+X` / `Cmd+Shift+X`).
 
-### 2. Configure
+### 2️⃣ Create a config
 
-Open the SFTP sidebar from the activity bar. If no config exists yet, click **"Create SFTP Config"** in the welcome view. You can also open the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) and run:
+Open your project folder, then either:
 
-```
-SFTP: Config
-```
+- click the **SFTP** icon in the Activity Bar and choose **Create SFTP Config**, or
+- open the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) and run **`SFTP: Config`**.
 
-A `sftp.json` file is created under `.vscode`. Fill in your server details:
+This creates `.vscode/sftp.json`. Fill in your server:
 
 ```json
 {
@@ -92,486 +63,267 @@ A `sftp.json` file is created under `.vscode`. Fill in your server details:
   "host": "example.com",
   "protocol": "sftp",
   "port": 22,
-  "username": "root",
+  "username": "deploy",
   "remotePath": "/var/www/html",
-  "uploadOnSave": true,
-  "backup": {
-    "enabled": false,
-    "location": "remote",
-    "folder": ".vscode/sftp-backup",
-    "versions": 5
-  }
+  "uploadOnSave": true
 }
 ```
 
-> 💡 **No password?** Leave `"password"` out (or set it to `null`) — you'll be prompted once and can save it securely to your OS keychain. See [🔐 Security](#-security).  
-> 🛡️ **Backups** are disabled by default. Set `"backup.enabled": true` to keep timestamped versions of remote files before every upload/sync. See [🛡️ File Backups](#-file-backups).
+> 💡 **No password in the file.** Leave `password` out. SFTP Neo asks the first time you connect and offers to save it in your OS keychain.
 
-### 3. Go!
+### 3️⃣ Start working
 
-| Action | Command Palette |
-|--------|-----------------|
-| Download project | `SFTP: Download Project` |
-| Upload current file | `SFTP: Upload Active File` |
-| Sync local → remote | `SFTP: Sync Local -> Remote` |
-| Browse remote | `View: Show SFTP` (sidebar) |
-| Manage backups | Select a file in Remote Explorer → **Backups** panel |
+- **Get the files:** run **`SFTP: Download Project`**.
+- **Edit and save:** with `uploadOnSave` on, each save is uploaded.
+- **Browse the server:** open the **SFTP** sidebar.
+- **Right-click** any file or folder in the Explorer for upload, download, sync and diff.
 
-Right-click any file or folder in the **Explorer** for quick upload / download / diff options.
+<p align="center">
+  <img src="assets/readme/sidebar.png" alt="The SFTP sidebar with the remote Explorer, Transfer Queue and Backups views next to sftp.json" width="100%">
+</p>
 
 ---
 
-## 🔧 Config Examples
+## ⌨️ Everyday commands
 
-### 🎭 Profiles
-Switch between environments on the fly:
+Run them from the Command Palette, or right-click a file or folder.
+
+| | Command | What it does |
+|---|---|---|
+| ⬆️ | `SFTP: Upload Active File` | Upload the file you're editing |
+| ⬆️ | `SFTP: Upload Changed Files` — `Ctrl+Alt+U` | Upload the files Git reports as changed |
+| ⬇️ | `SFTP: Download Project` | Download the whole `remotePath` |
+| 🔄 | `SFTP: Sync Local -> Remote` | Make the server match your folder |
+| 🔄 | `SFTP: Sync Remote -> Local` | Make your folder match the server |
+| 👀 | `SFTP: Preview Sync` | Choose a direction and review every change first |
+| 🔍 | `SFTP: Diff Active File with Remote` | Compare your copy with the server's |
+| 🎭 | `SFTP: Set Profile` | Switch between profiles |
+| 🖥️ | `SFTP: Open SSH in Terminal` | Open an SSH session to the server |
+| 🧹 | `SFTP: Delete Saved Password` | Remove a password from the keychain |
+
+📖 Full list: [docs/commands.md](./docs/commands.md)
+
+---
+
+## 🧩 Common setups
+
+Copy only the options you need. Every option is documented in [docs/options.md](./docs/options.md).
+
+<details>
+<summary>🔑 <b>SSH key</b></summary>
+
+```json
+{
+  "host": "example.com",
+  "username": "deploy",
+  "privateKeyPath": "~/.ssh/id_ed25519",
+  "remotePath": "/var/www/html"
+}
+```
+
+Is the key protected by a passphrase? Add `"passphrase": true`. SFTP Neo asks once and can save it in your keychain.
+
+</details>
+
+<details>
+<summary>🗝️ <b>SSH agent (no passwords at all)</b></summary>
+
+Load your key once with `ssh-add ~/.ssh/id_ed25519`, then point SFTP Neo at the agent:
+
+| Platform | `agent` value |
+|---|---|
+| 🍎 macOS / 🐧 Linux | `"$SSH_AUTH_SOCK"` (read from the environment) |
+| 🪟 Windows OpenSSH | `"\\\\.\\pipe\\openssh-ssh-agent"` |
+| 🪟 Pageant | `"pageant"` |
+
+```json
+{
+  "host": "example.com",
+  "username": "deploy",
+  "agent": "$SSH_AUTH_SOCK",
+  "privateKeyPath": "~/.ssh/id_ed25519",
+  "identitiesOnly": true,
+  "remotePath": "/var/www/html"
+}
+```
+
+With `privateKeyPath` set, the agent signs with that key, so the key's passphrase isn't needed. `identitiesOnly` offers only that key. This avoids *"Too many authentication failures"* when the agent holds many keys.
+
+</details>
+
+<details>
+<summary>📇 <b>Reuse <code>~/.ssh/config</code></b></summary>
+
+Set `host` to an alias from your SSH config. SFTP Neo reads `HostName`, `Port`, `User`, `IdentityFile`, `IdentitiesOnly` and `ServerAliveInterval` from it:
+
+```json
+{
+  "host": "my-server-alias",
+  "remotePath": "/var/www/html"
+}
+```
+
+Use `sshConfigPath` if your config file lives somewhere else.
+
+</details>
+
+<details>
+<summary>🎭 <b>Profiles: dev, staging, production</b></summary>
 
 ```json
 {
   "username": "deploy",
-  "remotePath": "/app",
+  "remotePath": "/var/www/html",
   "profiles": {
-    "dev": { "host": "dev.example.com", "uploadOnSave": true },
+    "dev":  { "host": "dev.example.com",  "uploadOnSave": true },
     "prod": { "host": "prod.example.com", "uploadOnSave": false }
   },
   "defaultProfile": "dev"
 }
 ```
 
-Use `SFTP: Set Profile` to switch.
+Switch with **`SFTP: Set Profile`**. A profile can override any option.
 
-A profile can override any top-level option, including `watcher` — useful when
-something outside VS Code edits your files (an AI coding tool, a build step) and
-you want those changes uploaded automatically on dev but never on prod:
+</details>
 
-```json
-{
-  "username": "deploy",
-  "remotePath": "/app",
-  "watcher": { "files": "**/*", "autoUpload": false },
-  "profiles": {
-    "dev":  { "host": "dev.example.com",  "watcher": { "files": "**/*", "autoUpload": true } },
-    "prod": { "host": "prod.example.com", "watcher": { "files": "**/*", "autoUpload": false } }
-  },
-  "defaultProfile": "dev"
-}
-```
+<details>
+<summary>📂 <b>Different folders to different servers</b></summary>
 
-Object options are replaced wholesale rather than merged key-by-key, so repeat
-`files` in each profile. Switching profiles rebuilds the watcher immediately —
-no reload needed.
-
-### 📂 Multiple Contexts
-Sync different parts of your project to different places:
+`sftp.json` can hold an array. Each entry syncs its own `context` folder:
 
 ```json
 [
-  {
-    "name": "Frontend",
-    "context": "client/dist",
-    "host": "cdn.example.com",
-    "remotePath": "/static"
-  },
-  {
-    "name": "Backend",
-    "context": "server",
-    "host": "api.example.com",
-    "remotePath": "/var/api"
-  }
+  { "name": "Frontend", "context": "web/dist", "host": "cdn.example.com", "remotePath": "/static" },
+  { "name": "Backend",  "context": "api",      "host": "api.example.com", "remotePath": "/srv/api" }
 ]
 ```
 
-### 🔗 Connection Hopping
-Reach a server through a bastion host:
+</details>
+
+<details>
+<summary>🔗 <b>Through a jump host (bastion)</b></summary>
 
 ```json
 {
-  "name": "Target",
   "host": "bastion.example.com",
-  "username": "jumpuser",
-  "privateKeyPath": "~/.ssh/id_rsa",
+  "username": "jump",
+  "privateKeyPath": "~/.ssh/id_ed25519",
+  "remotePath": "/srv/app",
   "hop": {
-    "host": "target.internal",
-    "username": "appuser",
-    "privateKeyPath": "~/.ssh/id_rsa"
+    "host": "app.internal",
+    "username": "deploy",
+    "privateKeyPath": "~/.ssh/id_ed25519"
   }
 }
 ```
 
-### 📋 Every Option, With Defaults
-
-> For a complete, detailed list of all configuration options, see [options.md](/docs/options.md).
-
-
-
-You only need the handful of options your setup actually uses — the block below
-is a **reference**, not a starting point. Copy the lines you want, not the whole
-thing.
-
-
+</details>
 
 <details>
-<summary>Show the full <code>sftp.json</code> reference</summary>
+<summary>📡 <b>FTP and FTPS</b></summary>
 
 ```json
 {
-  "name": "My Server",
-  "context": ".",
-  "protocol": "sftp",
-
-  "host": "example.com",
-  "port": 22,
-  "username": "user",
-  "password": null,
-  "remotePath": "/var/www/html",
-  "connectTimeout": 10000,
-  "keepalive": 30000,
-  "concurrency": 4,
-
-  "privateKeyPath": "~/.ssh/id_rsa",
-  "passphrase": null,
-  "agent": null,
-  "interactiveAuth": false,
-  "sshConfigPath": "~/.ssh/config",
-
-  "uploadOnSave": false,
-  "downloadOnOpen": false,
-  "useTempFile": false,
-  "openSsh": false,
-
-  "ignore": [".vscode", ".git", ".github", ".DS_Store", "Thumbs.db", "src", ".env", ".env.*", "AGENTS.md", "CLAUDE.md", ".claude", ".cursor", "*.log", "*.tmp", "*.bak"],
-  "ignoreFile": ".gitignore",
-
-  "watcher": {
-    "files": "**/*",
-    "autoUpload": false,
-    "autoDelete": false,
-    "autoRename": false
-  },
-
-  "syncOption": {
-    "delete": false,
-    "skipCreate": false,
-    "ignoreExisting": false,
-    "update": false,
-    "preview": "onDelete"
-  },
-
-  "backup": {
-    "enabled": false,
-    "location": "remote",
-    "folder": ".vscode/sftp-backup",
-    "versions": 5,
-    "onDelete": false
-  },
-
-  "remoteExplorer": {
-    "filesExclude": [],
-    "order": 0,
-    "enableDragAndDrop": false
-  },
-
-  "hooks": {
-    "preUpload": "",
-    "postUpload": "",
-    "preDownload": "",
-    "postDownload": "",
-    "preSync": "",
-    "postSync": ""
-  },
-
-  "filePerm": 644,
-  "dirPerm": 755,
-  "remoteTimeOffsetInHours": 0,
-  "limitOpenFilesOnRemote": false,
-
-  "profiles": {
-    "dev": { "host": "dev.example.com" },
-    "prod": { "host": "prod.example.com" }
-  },
-  "defaultProfile": "dev"
+  "host": "ftp.example.com",
+  "protocol": "ftp",
+  "port": 21,
+  "username": "deploy",
+  "secure": true,
+  "remotePath": "/public_html"
 }
 ```
 
-FTP-only options: `secure`, `secureOptions`, `passive`. SFTP-only extras:
-`algorithms`, `sshCustomParams`, and `hop` (bastion hosts — see above).
-
-`sftp.json` is strict JSON — **comments are not supported**, so don't paste `//`
-notes into it.
-
-Drop `privateKeyPath` / `passphrase` / `agent` if you authenticate with a
-password, and drop `password` if you don't (you'll be prompted once and can save
-it to your OS keychain).
-
-The four options worth understanding before switching on:
-
-| Option | Default | Why it's off |
-|---|---|---|
-| `watcher.autoUpload` | `false` | Uploads on any change the watcher sees, including from tools outside VS Code. Pair with `uploadOnSave` freely — a Ctrl+S will not upload twice. |
-| `watcher.autoDelete` | `false` | **Destructive.** Deletes on the server when a local file disappears. A branch switch or a too-broad `ignore` can remove remote content. Folder deletes are recursive. |
-| `watcher.autoRename` | `false` | Turns a rename into a server-side rename instead of a re-upload. Only covers renames made **through VS Code** — `mv` in a terminal still looks like delete + create. |
-| `backup.onDelete` | `false` | Makes deletes recoverable, but copies file contents, so deleting a large folder moves a lot of data. |
-
-> 📖 **Every option explained** — types, defaults, and behaviour — in
-> [docs/options.md](./docs/options.md).
+`"secure": true` turns on FTPS (TLS). Use `"implicit"` for implicit FTPS, or leave `secure` out for plain FTP.
 
 </details>
 
 ---
 
-## 🔐 Security
+## 👀 Preview before you sync
 
-SFTP Neo stores passwords & passphrases in your **OS credential store** (macOS Keychain, Windows Credential Manager, Linux libsecret) via VS Code's Secret Storage API — so your `sftp.json` stays clean and commit-safe.
+**`SFTP: Preview Sync`** lists every upload and deletion before anything happens. Untick what you want to skip, then press **Enter**. Press **Esc** and nothing is transferred.
 
-**How to use it:**
+Regular syncs show the same list automatically whenever they would **delete** files. You can change this with `syncOption.preview`: `"onDelete"` (the default), `"always"` or `"never"`.
 
-1. Set `"password": null` (or omit it) in `sftp.json`:
-   ```json
-   {
-     "host": "example.com",
-     "username": "root",
-     "password": null,
-     "remotePath": "/var/www"
-   }
-   ```
-2. Connect — you'll be prompted for the password.
-3. Click **"Save password to Secret Storage"**.
-4. Future connections are automatic & encrypted.
-
-The same works for private key `passphrase`.
-
-> 🧹 Manage saved credentials anytime with `SFTP: Delete Saved Password`.
-
-> 🚫 **`.vscode` is always excluded from transfers**, regardless of your `ignore` option and even if `sftp.json` tries to override it. It commonly holds `sftp.json` itself, which bots actively probe for on the open web.
+<p align="center">
+  <img src="assets/readme/sync-preview.png" alt="The Preview Sync list grouped into Upload – new, Upload – changed and Delete on remote, with one deletion unticked" width="100%">
+</p>
 
 ---
 
-## 🔑 SSH Authentication
+## 🛡️ Backups
 
-SFTP Neo supports three ways to authenticate SFTP connections. For both security and convenience, **SSH keys** or **ssh-agent** are recommended over plaintext passwords.
-
-| Method | Best for | Stored in `sftp.json` | Works with **Open SSH in Terminal** |
-|--------|----------|----------------------|-------------------------------------|
-| `privateKeyPath` | Single key file, no agent running | Path only (never the key contents) | ✅ Yes, with `-i /path/to/key` |
-| `agent` | Shared workstation, multiple keys, or fully password-less login | No secrets | ✅ Yes — the most seamless option |
-| `password` / `passphrase` | Servers that require it | `null` + Secret Storage (recommended) | ❌ No auto-fill in terminal |
-
-### SSH private key (`privateKeyPath`)
-
-1. **Generate a key pair** (skip if you already have one):
-   ```bash
-   ssh-keygen -t ed25519 -C "you@example.com"
-   ```
-   Press Enter to accept the default location (`~/.ssh/id_ed25519`). You can set a passphrase for extra security.
-
-2. **Copy the public key to your server**:
-   ```bash
-   ssh-copy-id -i ~/.ssh/id_ed25519.pub user@example.com
-   ```
-
-3. **Configure SFTP Neo**:
-   ```json
-   {
-     "name": "My Server",
-     "host": "example.com",
-     "protocol": "sftp",
-     "port": 22,
-     "username": "user",
-     "privateKeyPath": "~/.ssh/id_ed25519",
-     "remotePath": "/var/www/html",
-     "uploadOnSave": true
-   }
-   ```
-
-> 💡 **Encrypted key?** Set `"passphrase": true` and SFTP Neo will prompt once, then offer to save it to Secret Storage. Or load the key into ssh-agent (see below) and omit `passphrase`.
-
-### SSH agent (`agent`)
-
-Using an ssh-agent is the most convenient option: your key is unlocked once per session, and both SFTP transfers and **Open SSH in Terminal** work without typing a password.
-
-#### macOS / Linux
-
-1. **Start the agent and add your key**:
-   ```bash
-   eval "$(ssh-agent -s)"
-   ssh-add ~/.ssh/id_ed25519
-   ```
-
-2. **Get the agent socket**:
-   ```bash
-   echo $SSH_AUTH_SOCK
-   # Example: /tmp/ssh-XXXXXX/agent.12345
-   ```
-
-3. **Configure SFTP Neo**:
-   ```json
-   {
-     "host": "example.com",
-     "username": "user",
-     "agent": "/tmp/ssh-XXXXXX/agent.12345",
-     "remotePath": "/var/www/html"
-   }
-   ```
-
-> 🍎 On macOS, if your key is stored in Keychain, use `ssh-add --apple-use-keychain ~/.ssh/id_ed25519` so you are not prompted after every reboot.
-
-#### Windows
-
-- **Pageant** (PuTTY agent): set `"agent": "pageant"`.
-- **Windows OpenSSH agent**: make sure the `OpenSSH Authentication Agent` service is running, then set `"agent": "\\\\.\\pipe\\openssh-ssh-agent"` (the pipe name may differ on older Windows builds).
-
-### Platform-specific tips
-
-| Platform | Tip |
-|----------|-----|
-| **macOS** | `ssh-add --apple-use-keychain ~/.ssh/id_ed25519` persists the unlocked key across reboots. |
-| **Linux** | `ssh-agent` exits when the shell closes. Use your distro’s user service or add the `eval`/`ssh-add` commands to your shell profile to keep it available. |
-| **Windows** | For WSL, use the Linux instructions inside WSL. For native Windows, the OpenSSH agent pipe or Pageant are the usual choices. |
-
-### A note on **Open SSH in Terminal**
-
-The sidebar command builds a plain terminal command:
-
-```bash
-ssh -t user@host -p 22 -i "/path/to/key"
-```
-
-It can automatically use:
-
-- your `privateKeyPath` (`-i ...`)
-- your ssh-agent (no extra flags)
-
-It **cannot** auto-type a password or passphrase into the terminal. If you want a fully password-less terminal experience, use an ssh-agent.
-
----
-
-## 🖥️ Remote Explorer
-
-Browse your remote server directly in the VS Code sidebar.
-
-![Remote Explorer Preview](https://raw.githubusercontent.com/philipdaoud/sftp-neo/master/assets/showcase/remote-explorer.png)
-
-Open it via:
-- Command Palette → `View: Show SFTP`
-- Or click the **SFTP** icon in the Activity Bar
-
-Select multiple files with `Ctrl`/`Shift` to download or upload in batches.
-
----
-
-## 🛡️ File Backups
-
-<div align="center">
-
-**Protect your production files. Every upload is reversible.**
-
-</div>
-
-Before any remote file is overwritten by an upload or sync-to-remote operation, SFTP Neo automatically creates a timestamped backup copy. Choose to keep backups on the remote server or in your local workspace. Browse, restore, or delete backup versions without leaving VS Code.
-
-### 🚀 How It Works
-
-#### Remote backups (`"location": "remote"`, default)
-
-```
-Before Upload                    After Upload
-─────────────────                ─────────────────
-remote/index.php                 remote/index.php  ← new content
-                                 remote/.vsftp-backup/
-                                   └─ index.php.20260612194215007.bak  ← old content
-```
-
-#### Local backups (`"location": "local"`)
-
-```
-Before Upload                    After Upload
-─────────────────                ─────────────────
-remote/index.php                 remote/index.php  ← new content
-                                 workspace/.vsftp-backup/
-                                   └─ index.php.20260612194215007.bak  ← old content
-```
-
-The remote directory layout is preserved inside the backup folder so you can mirror the server structure locally.
-
-### ⚙️ Configuration
-
-Add the `backup` object to your `.vscode/sftp.json`:
+Turn on backups and SFTP Neo saves a timestamped copy of every remote file before overwriting it:
 
 ```json
 {
-  "name": "Production",
-  "host": "example.com",
-  "protocol": "sftp",
-  "port": 22,
-  "username": "root",
-  "remotePath": "/var/www/html",
-  "uploadOnSave": true,
-  "backup": {
-    "enabled": true,
-    "location": "remote",
-    "folder": ".vsftp-backup",
-    "versions": 5
-  }
+  "backup": { "enabled": true, "location": "remote", "versions": 5 }
 }
 ```
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `backup.enabled` | `boolean` | `false` | Master switch. Set to `true` to enable backups. |
-| `backup.location` | `string` | `"remote"` | Where backups are stored. `"remote"` keeps them on the server under `remotePath`; `"local"` keeps them in your workspace root. |
-| `backup.folder` | `string` | `".vscode/sftp-backup"` | Folder where backups are stored. Resolved relative to `remotePath` when `location` is `"remote"`, or relative to the workspace root when `location` is `"local"`. |
-| `backup.versions` | `number` | `5` | Maximum number of backup versions to keep per file. Set to `0` to disable backups even when `enabled` is `true`. |
+- 📍 `location`: `"remote"` keeps copies on the server; `"local"` keeps them in your workspace.
+- 🔢 `versions`: how many copies to keep per file. Older ones are removed automatically.
+- 🗑️ `onDelete`: also back up files before they are deleted.
 
-> 💡 **Tip:** The backup folder is automatically excluded from sync operations and the Remote Explorer — you never have to worry about backups being uploaded or cluttering your file tree.
-
-### 📂 Using the Backups Panel
-
-1. **Enable backups** in your `sftp.json` (see configuration above).
-2. **Upload or sync** a file — a backup is created automatically before the overwrite.
-3. **Click any file** in the **Remote Explorer** panel.
-4. The **Backups** panel (titled **Remote Backups** or **Local Backups** based on your setting) updates to show all backup versions for that file, sorted newest → oldest.
-
-| Action | How |
-|--------|-----|
-| 🔄 **Restore** | Right-click a backup version → `Restore Backup`. The current live file is backed up first, then replaced. |
-| 🗑️ **Delete** | Right-click a backup version → `Delete Backup`. |
-| 👁️ **Preview** | Click any backup version to open it in a read-only preview without downloading. |
-
-### 🔒 Safety Guarantees
-
-- **Upload never blocked:** If a backup fails for any reason, the upload still proceeds. Your code always goes live.
-- **Auto-pruning:** Old backups beyond your `versions` limit are cleaned up automatically after each upload.
-- **No sync loops:** The backup folder is invisible to sync, so local backups are never auto-uploaded and remote backups are never downloaded.
-- **Context-aware:** The panel only shows backups for the file you have selected in Remote Explorer.
+Select a file in the Remote Explorer to see its versions in the **Backups** view. From there you can open, **restore**, or delete any version. A failed backup never blocks an upload.
 
 ---
 
-## 🐛 Debug
+## 🔐 Security
 
-Need to troubleshoot?
-
-1. Open **Settings** (`Ctrl+,` / `Cmd+,`).
-2. Search for `sftp.debug` and set it to `true`.
-3. Reload VS Code.
-4. View logs in **Output → SFTP**.
-
----
-
-## 📖 Configuration Reference
-
-See [docs/options.md](./docs/options.md) for every `sftp.json` option — types,
-defaults, and behaviour.
+- 🔒 **Passwords and passphrases** are stored in your OS keychain (macOS Keychain, Windows Credential Manager, libsecret), not in `sftp.json`. Remove them with `SFTP: Delete Saved Password`.
+- 🚫 **`.vscode` is never transferred.** That folder holds `sftp.json`, so it can't leak to your server.
+- 🧭 **Host keys are verified** with OpenSSH-style `SHA256:` fingerprints. If a key changes, you see both fingerprints and decide.
+  - `"hostKeyChecking": "accept-new"` trusts new servers automatically. A *changed* key still asks.
+  - For throwaway test servers, the **user setting** [`sftp.skipHostKeyVerification`](./docs/setting.md#skiphostkeyverification) lists hosts whose key isn't checked. A workspace can't set it.
+- 🧯 **Destructive actions ask first**: deletes, and syncs that would delete files.
 
 ---
 
-## ❓ FAQ
+## 🩺 Troubleshooting
 
-See [FAQ.md](./FAQ.md) for common questions and solutions.
+1. Open **Settings** (`Ctrl+,` / `Cmd+,`) and turn on **`sftp.debug`**.
+2. Reload VS Code and repeat the problem.
+3. Open **View → Output** and pick **SFTP** from the list.
+
+| Problem | Try |
+|---|---|
+| *Too many authentication failures* | Set `privateKeyPath` and `"identitiesOnly": true` next to `agent` |
+| *Timed out while waiting for handshake* | Check `host` and `port`, or raise `connectTimeout` |
+| *Host key has CHANGED* | Expected after a rebuild? Choose **Accept New Key** |
+| *Error: Failure* | Point `remotePath` at the real folder, not a symlink |
+
+More answers in the [FAQ](./FAQ.md). Still stuck? [Open an issue](https://github.com/philipdaoud/sftp-neo/issues) and include the SFTP output log.
 
 ---
 
-<div align="center">
+## 📖 Documentation
 
-Made with ☕ & 🐛 squashing by [Philip Daoud](https://github.com/PhilipDaoud)
+| | |
+|---|---|
+| ⚙️ [All `sftp.json` options](./docs/options.md) | Every option, its default, and what it does |
+| ⌨️ [Commands](./docs/commands.md) | Every command and where to find it |
+| 🎛️ [VS Code settings](./docs/setting.md) | Extension-wide settings such as `sftp.debug` |
+| ❓ [FAQ](./FAQ.md) | Common errors and how to fix them |
+| 📝 [Changelog](./CHANGELOG.md) | What's new in each release |
 
-</div>
+---
+
+## 🤝 Contributing
+
+Bug reports, ideas and pull requests are welcome. See [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+```bash
+git clone https://github.com/philipdaoud/sftp-neo.git
+cd sftp-neo
+npm install
+npm test
+```
+
+Press **F5** in VS Code to launch a development window with the extension loaded.
+
+---
+
+<p align="center">
+  MIT licensed · Built by <a href="https://github.com/philipdaoud">Philip Daoud</a>
+</p>

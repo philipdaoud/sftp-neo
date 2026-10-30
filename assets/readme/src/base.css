@@ -1,0 +1,13 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --cyan: #12b5d6; --blue: #3b82f6; --violet: #8b5cf6; --purple: #a43cf5; --amber: #f5a524;
+  --bg: #0d1020; --panel: #151a30; --panel2: #1b2140; --line: #2a3158; --text: #e8ebf7; --muted: #9aa3c7;
+  --green: #34d399; --red: #f87171;
+}
+html, body { background: transparent; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif; color: var(--text); }
+.card { background: radial-gradient(1200px 500px at 0% 0%, #1a2350 0%, transparent 60%),
+                    radial-gradient(900px 500px at 100% 100%, #2b1550 0%, transparent 60%), var(--bg);
+        border-radius: 28px; overflow: hidden; position: relative; }
+.grad { background: linear-gradient(90deg, var(--cyan), var(--blue) 45%, var(--purple)); -webkit-background-clip: text; color: transparent; }
+.mono { font-family: "SF Mono", Menlo, Consolas, monospace; }

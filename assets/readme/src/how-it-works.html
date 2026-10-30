@@ -1,0 +1,27 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="base.css"><style>
+.card { width: 1280px; height: 520px; padding: 48px 64px; }
+h2 { font-size: 30px; font-weight: 700; margin-bottom: 36px; }
+.row { display: flex; align-items: center; justify-content: space-between; }
+.box { width: 310px; height: 350px; border-radius: 24px; background: var(--panel); border: 1.5px solid var(--line); padding: 28px; }
+.box .icon { font-size: 54px; }
+.box h3 { font-size: 26px; margin: 14px 0 12px; }
+.box .tree { font-size: 16px; color: var(--muted); line-height: 1.7; }
+.mid { flex: 1; padding: 0 28px; display: flex; flex-direction: column; gap: 14px; }
+.flow { display: flex; align-items: center; gap: 14px; font-size: 20px; font-weight: 600; padding: 14px 20px; border-radius: 14px; background: var(--panel2); border: 1.5px solid var(--line); }
+.flow .arrow { margin-left: auto; font-size: 24px; }
+.r { color: var(--cyan); } .l { color: var(--purple); } .b { color: var(--amber); }
+.neo { border-image: linear-gradient(90deg, var(--cyan), var(--purple)) 1; }
+</style></head><body><div class="card">
+<h2>How it works — <span class="grad">your files stay local, SFTP Neo keeps the server in step</span></h2>
+<div class="row">
+  <div class="box"><div class="icon">💻</div><h3>Your workspace</h3>
+    <div class="tree mono">📁 my-site/<br>&nbsp;├ 📁 .vscode/<br>&nbsp;│&nbsp;&nbsp;└ sftp.json<br>&nbsp;├ index.php<br>&nbsp;└ 📁 assets/</div></div>
+  <div class="mid">
+    <div class="flow">💾 Upload on save<span class="arrow r">→</span></div>
+    <div class="flow">🔄 Sync with preview<span class="arrow r">⇄</span></div>
+    <div class="flow">⬇️ Download &amp; diff<span class="arrow l">←</span></div>
+    <div class="flow">🛡️ Backup before overwrite<span class="arrow b">↺</span></div>
+  </div>
+  <div class="box"><div class="icon">🖥️</div><h3>Your server</h3>
+    <div class="tree mono">🌐 example.com<br>&nbsp;└ 📁 /var/www/html/<br>&nbsp;&nbsp;&nbsp;&nbsp;├ index.php<br>&nbsp;&nbsp;&nbsp;&nbsp;├ 📁 assets/<br>&nbsp;&nbsp;&nbsp;&nbsp;└ 📁 sftp-backup/</div></div>
+</div></div></body></html>
